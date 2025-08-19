@@ -1,0 +1,71 @@
+interface LoginData {
+  email: string;
+  password: string;
+}
+
+interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  department?: string;
+  specialization?: string;
+}
+
+interface AuthResponse {
+  token: string;
+  expiration: string;
+  user: User;
+}
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5145';
+const API_URL = `${API_BASE_URL}/api`;
+
+export const authService = {
+  async login(data: LoginData): Promise<AuthResponse> {
+    const response = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error('Login failed');
+    }
+
+    const result = await response.json();
+    
+    // Store token in localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('token', result.token);
+      localStorage.setItem('user', JSON.stringify(result.user));
+    }
+    
+    return result;
+  },
+
+  logout() {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
+  },
+
+  getToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('token');
+  },
+
+  getUser(): User | null {
+    if (typeof window === 'undefined') return null;
+    const userStr = localStorage.getItem('user');
+    return userStr ? JSON.parse(userStr) : null;
+  },
+
+  isAuthenticated(): boolean {
+    return this.getToken() !== null;
+  }
+};
