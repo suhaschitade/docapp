@@ -65,3 +65,21 @@ body {
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.18);
 }
+
+/* Dropdown z-index utilities */
+.dropdown-container {
+  z-index: 999999;
+  position: relative;
+}
+
+.dropdown-menu {
+  z-index: 999999 !important;
+  position: absolute !important;
+}
+
+/* Ensure dropdowns appear above all other content */
+.notification-dropdown,
+.user-profile-dropdown {
+  z-index: 999999 !important;
+  position: absolute !important;
+}

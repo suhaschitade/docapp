@@ -9,7 +9,7 @@ namespace PatientManagementApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = "StaffPolicy")] // Staff, Admin, Doctor, Nurse can access
 public class PatientsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -26,7 +26,7 @@ public class PatientsController : ControllerBase
     public async Task<ActionResult<IEnumerable<PatientDto>>> GetPatients(
         [FromQuery] string? search = null,
         [FromQuery] PatientStatusType? status = null,
-        [FromQuery] CancerSiteType? cancerSite = null,
+        [FromQuery] string? cancerSite = null,
         [FromQuery] RiskLevelType? riskLevel = null,
         [FromQuery] string? assignedDoctorId = null,
         [FromQuery] int page = 1,
@@ -42,10 +42,11 @@ public class PatientsController : ControllerBase
             // Apply filters
             if (!string.IsNullOrEmpty(search))
             {
+                var searchUpper = search.ToUpper();
                 query = query.Where(p => 
-                    p.FirstName.Contains(search) ||
-                    p.LastName.Contains(search) ||
-                    p.PatientId.Contains(search) ||
+                    p.FirstName.ToUpper().Contains(searchUpper) ||
+                    p.LastName.ToUpper().Contains(searchUpper) ||
+                    p.PatientId.ToUpper().Contains(searchUpper) ||
                     p.MobileNumber.Contains(search));
             }
 
@@ -54,9 +55,10 @@ public class PatientsController : ControllerBase
                 query = query.Where(p => p.CurrentStatus == status.Value);
             }
 
-            if (cancerSite.HasValue)
+            if (!string.IsNullOrEmpty(cancerSite))
             {
-                query = query.Where(p => p.PrimaryCancerSite == cancerSite.Value);
+                // Case-insensitive comparison of cancer site
+                query = query.Where(p => p.PrimaryCancerSite.ToString().ToUpper() == cancerSite.ToUpper());
             }
 
             if (riskLevel.HasValue)
@@ -66,7 +68,8 @@ public class PatientsController : ControllerBase
 
             if (!string.IsNullOrEmpty(assignedDoctorId))
             {
-                query = query.Where(p => p.AssignedDoctorId == assignedDoctorId);
+                // Show patients assigned to this doctor OR patients with no assigned doctor
+                query = query.Where(p => p.AssignedDoctorId == assignedDoctorId || p.AssignedDoctorId == null);
             }
 
             // Get total count for pagination
@@ -219,6 +222,7 @@ public class PatientsController : ControllerBase
 
     // POST: api/patients
     [HttpPost]
+    [Authorize(Roles = "Staff,Admin")] // Only Staff and Admin can create patients
     public async Task<ActionResult<PatientDto>> CreatePatient(CreatePatientDto createPatientDto)
     {
         try
@@ -236,7 +240,7 @@ public class PatientsController : ControllerBase
                 PatientId = createPatientDto.PatientId,
                 FirstName = createPatientDto.FirstName,
                 LastName = createPatientDto.LastName,
-                DateOfBirth = createPatientDto.DateOfBirth,
+                DateOfBirth = DateTime.SpecifyKind(createPatientDto.DateOfBirth, DateTimeKind.Utc),
                 Gender = Enum.Parse<Gender>(createPatientDto.Gender),
                 MobileNumber = createPatientDto.MobileNumber,
                 Email = createPatientDto.Email,
@@ -250,13 +254,13 @@ public class PatientsController : ControllerBase
                 PrimaryCancerSite = Enum.Parse<CancerSiteType>(createPatientDto.PrimaryCancerSite),
                 CancerStage = createPatientDto.CancerStage,
                 Histology = createPatientDto.Histology,
-                DiagnosisDate = createPatientDto.DiagnosisDate,
+                DiagnosisDate = createPatientDto.DiagnosisDate.HasValue ? DateTime.SpecifyKind(createPatientDto.DiagnosisDate.Value, DateTimeKind.Utc) : null,
                 TreatmentPathway = Enum.Parse<TreatmentPathwayType>(createPatientDto.TreatmentPathway),
                 CurrentStatus = PatientStatusType.Active,
                 RiskLevel = Enum.Parse<RiskLevelType>(createPatientDto.RiskLevel),
                 AssignedDoctorId = createPatientDto.AssignedDoctorId,
-                RegistrationDate = DateTime.Today,
-                NextFollowupDate = createPatientDto.NextFollowupDate,
+                RegistrationDate = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc),
+                NextFollowupDate = createPatientDto.NextFollowupDate.HasValue ? DateTime.SpecifyKind(createPatientDto.NextFollowupDate.Value, DateTimeKind.Utc) : null,
                 CreatedBy = currentUserId,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -315,6 +319,7 @@ public class PatientsController : ControllerBase
 
     // PUT: api/patients/{id}
     [HttpPut("{id}")]
+    [Authorize(Roles = "Staff,Admin")] // Only Staff and Admin can update patients
     public async Task<IActionResult> UpdatePatient(int id, UpdatePatientDto updatePatientDto)
     {
         try
@@ -336,7 +341,7 @@ public class PatientsController : ControllerBase
             patient.PatientId = updatePatientDto.PatientId;
             patient.FirstName = updatePatientDto.FirstName;
             patient.LastName = updatePatientDto.LastName;
-            patient.DateOfBirth = updatePatientDto.DateOfBirth;
+            patient.DateOfBirth = DateTime.SpecifyKind(updatePatientDto.DateOfBirth, DateTimeKind.Utc);
             patient.Gender = Enum.Parse<Gender>(updatePatientDto.Gender);
             patient.MobileNumber = updatePatientDto.MobileNumber;
             patient.Email = updatePatientDto.Email;
@@ -350,12 +355,12 @@ public class PatientsController : ControllerBase
             patient.PrimaryCancerSite = Enum.Parse<CancerSiteType>(updatePatientDto.PrimaryCancerSite);
             patient.CancerStage = updatePatientDto.CancerStage;
             patient.Histology = updatePatientDto.Histology;
-            patient.DiagnosisDate = updatePatientDto.DiagnosisDate;
+            patient.DiagnosisDate = updatePatientDto.DiagnosisDate.HasValue ? DateTime.SpecifyKind(updatePatientDto.DiagnosisDate.Value, DateTimeKind.Utc) : null;
             patient.TreatmentPathway = Enum.Parse<TreatmentPathwayType>(updatePatientDto.TreatmentPathway);
             patient.CurrentStatus = Enum.Parse<PatientStatusType>(updatePatientDto.CurrentStatus);
             patient.RiskLevel = Enum.Parse<RiskLevelType>(updatePatientDto.RiskLevel);
             patient.AssignedDoctorId = updatePatientDto.AssignedDoctorId;
-            patient.NextFollowupDate = updatePatientDto.NextFollowupDate;
+            patient.NextFollowupDate = updatePatientDto.NextFollowupDate.HasValue ? DateTime.SpecifyKind(updatePatientDto.NextFollowupDate.Value, DateTimeKind.Utc) : null;
             patient.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();

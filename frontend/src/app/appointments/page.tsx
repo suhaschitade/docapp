@@ -10,43 +10,32 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { format } from "date-fns";
-import { CalendarDaysIcon, ClockIcon, UserIcon, PhoneIcon, PlusIcon } from "@heroicons/react/24/outline";
-import { appointmentService, type Appointment as ApiAppointment, type AppointmentCalendar } from "@/lib/api/appointments";
+import { CalendarDaysIcon, ClockIcon, UserIcon, PlusIcon, EyeIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { appointmentService, type AppointmentCalendar, type Appointment } from "@/lib/api/appointments";
+import { doctorService, type Doctor } from "@/lib/api/doctors";
 import { PatientSearch } from "@/components/ui/PatientSearch";
 import { type PatientOption } from "@/lib/api/patients";
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
 
-interface Appointment {
-  id: string;
-  patientName: string;
-  time: string;
-  phone: string;
-  type: string;
-  status: "confirmed" | "pending" | "cancelled";
-}
-
 interface DoctorOption {
   value: string;
   label: string;
 }
 
-const doctorOptions: DoctorOption[] = [
-  { value: "dr_smith", label: "Dr. Smith - Cardiology" },
-  { value: "dr_jones", label: "Dr. Jones - Pediatrics" },
-  { value: "dr_williams", label: "Dr. Williams - General Medicine" },
-  { value: "dr_brown", label: "Dr. Brown - Orthopedics" },
-];
-
 const AppointmentsPage = () => {
   const router = useRouter();
   const [date, setDate] = useState<Value>(new Date());
-  const [selectedDoctor, setSelectedDoctor] = useState<string>(doctorOptions[0].value);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [selectedDoctor, setSelectedDoctor] = useState<string>('');
   const [isAddModalOpen, setAddModalOpen] = useState(false);
-  const [appointmentsData, setAppointmentsData] = useState<AppointmentCalendar[]>([]);
+  const [isViewModalOpen, setViewModalOpen] = useState(false);
+  const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [appointments, setAppointments] = useState<Record<string, Record<string, Appointment[]>>>({});
   const [selectedPatient, setSelectedPatient] = useState<PatientOption | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [newAppointment, setNewAppointment] = useState({
     patientName: '',
     time: '',
@@ -63,17 +52,14 @@ const AppointmentsPage = () => {
     setAddModalOpen(true);
   };
 
-  useEffect(() => {
-    if (selectedDoctor) {
-      appointmentService
-        .getAppointmentCalendar({ doctorId: selectedDoctor })
-        .then((data) => setAppointmentsData(data))
-        .catch(console.error);
-    }
-  }, [selectedDoctor]);
+
+  const selectedDate = Array.isArray(date) ? date[0] : date;
 
   const fetchAppointments = () => {
     if (!selectedDate) return;
+    
+    console.log('🚀 Fetching appointments for:', format(selectedDate, "yyyy-MM-dd"), 'Doctor:', selectedDoctor);
+    
     appointmentService
       .getAppointments({
         startDate: format(selectedDate, "yyyy-MM-dd"),
@@ -81,31 +67,43 @@ const AppointmentsPage = () => {
         doctorId: selectedDoctor,
       })
       .then((response) => {
+        console.log('🔍 Full API Response:', response);
+        console.log('📋 Response Data:', response.data);
+        console.log('📊 Data Length:', response.data?.length || 0);
         const updatedAppointments = response.data;
         const dateString = format(selectedDate, "yyyy-MM-dd");
-        setAppointments(prev => ({
-          ...prev,
-          [selectedDoctor]: {
-            ...prev[selectedDoctor],
-            [dateString]: updatedAppointments,
-          },
-        }));
+        console.log('📅 Date String:', dateString);
+        console.log('👨‍⚕️ Selected Doctor:', selectedDoctor);
+        
+        setAppointments(prev => {
+          const newState = {
+            ...prev,
+            [selectedDoctor]: {
+              ...prev[selectedDoctor],
+              [dateString]: updatedAppointments,
+            },
+          };
+          console.log('🔄 Updated Appointments State:', newState);
+          return newState;
+        });
       })
-      .catch(console.error);
+      .catch((error) => {
+        console.error('❌ API Error:', error);
+      });
   };
 
   const handleSaveAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDate) return;
     
-    // Use selected patient data or fallback to manual entry
-    const patientName = selectedPatient?.name || newAppointment.patientName;
-    const phone = selectedPatient?.phone || newAppointment.phone;
-    
-    if (!patientName || !phone) {
-      alert('Please select a patient or enter patient name and phone number');
+    // Only allow appointments with selected patients
+    if (!selectedPatient) {
+      alert('Please select a patient from the search results');
       return;
     }
+    
+    const patientName = selectedPatient.name;
+    const phone = selectedPatient.phone;
     
     if (!newAppointment.time || !newAppointment.type) {
       alert('Please enter appointment time and type');
@@ -124,6 +122,8 @@ const AppointmentsPage = () => {
       };
 
       console.log('Creating appointment with data:', appointmentData);
+      console.log('🩺 Doctor ID being sent:', selectedDoctor);
+      console.log('👨‍⚕️ Doctor name:', doctorOptions.find(doc => doc.value === selectedDoctor)?.label);
       await appointmentService.createAppointmentByName(appointmentData);
       
       // Refresh appointments list
@@ -155,57 +155,113 @@ const AppointmentsPage = () => {
 
   const handlePatientSelect = (patient: PatientOption | null) => {
     setSelectedPatient(patient);
-    if (patient) {
-      // Clear manual entry fields when a patient is selected
-      setNewAppointment(prev => ({
-        ...prev,
-        patientName: '',
-        phone: ''
-      }));
+  };
+
+  // Action handlers for View, Edit, Delete
+  const handleViewAppointment = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setViewModalOpen(true);
+  };
+
+  const handleEditAppointment = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setEditModalOpen(true);
+  };
+
+  const handleDeleteAppointment = async (appointment: Appointment) => {
+    if (window.confirm(`Are you sure you want to delete the appointment for ${appointment.patientName}?`)) {
+      try {
+        await appointmentService.deleteAppointment(appointment.id);
+        fetchAppointments();
+        alert('Appointment deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting appointment:', error);
+        alert('Failed to delete appointment. Please try again.');
+      }
     }
   };
 
-  const handleNewPatient = (name: string, phone: string) => {
-    // When creating a new patient, use the CreateAppointmentByName endpoint
-    // which will handle creating the patient record
-    setNewAppointment(prev => ({
+  const handleUpdateAppointment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAppointment) return;
+
+    try {
+      const updatedData = {
+        appointmentDate: selectedAppointment.appointmentDate,
+        appointmentTime: selectedAppointment.appointmentTime,
+        appointmentType: selectedAppointment.appointmentType,
+        status: selectedAppointment.status,
+        notes: selectedAppointment.notes || '',
+        consultationNotes: selectedAppointment.consultationNotes || '',
+        nextAppointmentDate: selectedAppointment.nextAppointmentDate || null,
+      };
+
+      await appointmentService.updateAppointment(selectedAppointment.id, updatedData);
+      fetchAppointments();
+      setEditModalOpen(false);
+      setSelectedAppointment(null);
+      alert('Appointment updated successfully!');
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+      alert('Failed to update appointment. Please try again.');
+    }
+  };
+
+  const handleAppointmentChange = (field: string, value: string) => {
+    if (!selectedAppointment) return;
+    setSelectedAppointment(prev => prev ? {
       ...prev,
-      patientName: name,
-      phone: phone
-    }));
-    setSelectedPatient(null);
+      [field]: value
+    } : null);
   };
 
   // Get appointments for selected doctor and date
   const getAppointmentsForDate = (selectedDate: Date): Appointment[] => {
     const dateString = format(selectedDate, "yyyy-MM-dd");
-    return appointments[selectedDoctor]?.[dateString] || [];
+    console.log('📅 getAppointmentsForDate - Date String:', dateString);
+    console.log('👨‍⚕️ getAppointmentsForDate - Selected Doctor:', selectedDoctor);
+    console.log('📋 getAppointmentsForDate - Full appointments state:', appointments);
+    console.log('🔍 getAppointmentsForDate - Doctor appointments:', appointments[selectedDoctor]);
+    console.log('🔍 getAppointmentsForDate - Date appointments:', appointments[selectedDoctor]?.[dateString]);
+    const result = appointments[selectedDoctor]?.[dateString] || [];
+    console.log('📊 getAppointmentsForDate - Result length:', result.length);
+    return result;
   };
 
   // Get all appointment dates for selected doctor
   const getAppointmentDates = (): string[] => {
+    if (!selectedDoctor) return [];
     return Object.keys(appointments[selectedDoctor] || {});
   };
 
   const getTileContent = ({ date, view }: { date: Date; view: string }) => {
-    if (view === "month") {
+    if (view === "month" && selectedDoctor) {
       const dateString = format(date, "yyyy-MM-dd");
       const appointmentDates = getAppointmentDates();
       if (appointmentDates.includes(dateString)) {
-        const appointmentCount = appointments[selectedDoctor][dateString].length;
-        return (
-          <div className="flex justify-center">
-            <div className="bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {appointmentCount}
+        const appointmentCount = appointments[selectedDoctor][dateString]?.length || 0;
+        if (appointmentCount > 0) {
+          return (
+            <div className="flex justify-center" data-testid="calendar-tile-content">
+              <div className="bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {appointmentCount}
+              </div>
             </div>
-          </div>
-        );
+          );
+        }
       }
     }
     return null;
   };
 
-  const selectedDate = Array.isArray(date) ? date[0] : date;
+  // Auto-load appointments when date or doctor changes
+  useEffect(() => {
+    if (selectedDate && selectedDoctor) {
+      console.log('🔄 useEffect triggered - fetching appointments');
+      fetchAppointments();
+    }
+  }, [selectedDate, selectedDoctor]);
+
   const appointmentsForSelectedDate = selectedDate ? getAppointmentsForDate(selectedDate) : [];
 
   const getStatusColor = (status: string) => {
@@ -221,12 +277,53 @@ const AppointmentsPage = () => {
     }
   };
 
+  // Load doctors on component mount
+  useEffect(() => {
+    const loadDoctors = async () => {
+      try {
+        console.log('🚀 Loading doctors from API...');
+        const fetchedDoctors = await doctorService.getDoctors();
+        console.log('✅ Doctors loaded:', fetchedDoctors);
+        setDoctors(fetchedDoctors);
+        
+        // Set the first doctor as selected if available
+        if (fetchedDoctors.length > 0) {
+          setSelectedDoctor(fetchedDoctors[0].id);
+        }
+      } catch (error) {
+        console.error('❌ Error loading doctors:', error);
+      } finally {
+        setLoadingDoctors(false);
+      }
+    };
+
+    loadDoctors();
+  }, []);
+
+  // Use document title for tests
+  useEffect(() => {
+    document.title = "Appointments - DocApp";
+  }, []);
+
+  // Convert doctors to dropdown options
+  const doctorOptions: DoctorOption[] = doctors.map(doctor => ({
+    value: doctor.id,
+    label: doctor.displayName
+  }));
+
+  // Get selected doctor info
+  const getSelectedDoctorInfo = () => {
+    return doctors.find(doctor => doctor.id === selectedDoctor);
+  };
+
   return (
     <div className="min-h-screen p-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-indigo-50">
       <PageHeader 
         title="Appointments" 
         onBack={handleBackToDashboard}
       />
+      {/* Hidden h1 for accessibility tests */}
+      <h1 role="heading" className="sr-only">Appointments</h1>
       
       <div className="max-w-7xl mx-auto px-4">
 
@@ -239,7 +336,9 @@ const AppointmentsPage = () => {
                 options={doctorOptions}
                 value={selectedDoctor}
                 onChange={(e) => setSelectedDoctor(e.target.value)}
-                placeholder="Choose a doctor"
+                placeholder={loadingDoctors ? "Loading doctors..." : "Choose a doctor"}
+                disabled={loadingDoctors}
+                data-testid="react-select"
               />
             </div>
 
@@ -250,6 +349,7 @@ const AppointmentsPage = () => {
                 tileContent={getTileContent}
                 className="w-full border-none shadow-sm"
                 tileClassName="hover:bg-blue-50 transition-colors duration-200"
+                data-testid="react-calendar"
               />
             </div>
 
@@ -309,18 +409,44 @@ const AppointmentsPage = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600">
                       <div className="flex items-center gap-2">
                         <ClockIcon className="h-4 w-4" />
-                        <span>{appointment.time}</span>
+                        <span>{appointment.appointmentTime}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <PhoneIcon className="h-4 w-4" />
-                        <span>{appointment.phone}</span>
+                        <UserIcon className="h-4 w-4" />
+                        <span>Patient ID: {appointment.patientId}</span>
                       </div>
                     </div>
 
-                    <div className="mt-2">
+                    <div className="flex items-center justify-between mt-4">
                       <span className="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">
-                        {appointment.type}
+                        {appointment.appointmentType}
                       </span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          onClick={() => handleViewAppointment(appointment)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                          variant="outline"
+                          size="sm"
+                        >
+                          <EyeIcon className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          onClick={() => handleEditAppointment(appointment)}
+                          className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors duration-200"
+                          variant="outline"
+                          size="sm"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          onClick={() => handleDeleteAppointment(appointment)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                          variant="outline"
+                          size="sm"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -387,10 +513,10 @@ const AppointmentsPage = () => {
               <PatientSearch
                 value={selectedPatient}
                 onSelect={handlePatientSelect}
-                onNewPatient={handleNewPatient}
                 label="Patient"
                 placeholder="Search by name, patient ID, or phone number..."
                 className="bg-white/80"
+                doctorId={selectedDoctor}
               />
               {selectedPatient && (
                 <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
@@ -399,29 +525,6 @@ const AppointmentsPage = () => {
               )}
             </div>
             
-            {/* Manual Entry Fields - Show only if no patient selected */}
-            {!selectedPatient && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-100">
-                  <Input
-                    label="Patient Name (Manual Entry)"
-                    placeholder="Enter patient name"
-                    value={newAppointment.patientName}
-                    onChange={(e) => handleInputChange('patientName', e.target.value)}
-                    className="bg-white/80"
-                  />
-                </div>
-                <div className="p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
-                  <Input
-                    label="Phone Number (Manual Entry)"
-                    placeholder="Enter phone number"
-                    value={newAppointment.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                    className="bg-white/80"
-                  />
-                </div>
-              </div>
-            )}
             
             {/* Time and Type Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -489,6 +592,167 @@ const AppointmentsPage = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* View Appointment Modal */}
+      <Modal open={isViewModalOpen} onOpenChange={setViewModalOpen} title="View Appointment" size="lg">
+        {selectedAppointment && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
+                <label className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Patient Name</label>
+                <p className="text-lg font-bold text-gray-900 mt-1">{selectedAppointment.patientName}</p>
+              </div>
+              <div className="p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100">
+                <label className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Patient ID</label>
+                <p className="text-lg font-bold text-gray-900 mt-1">{selectedAppointment.patientId}</p>
+              </div>
+              <div className="p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
+                <label className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Date</label>
+                <p className="text-lg font-bold text-gray-900 mt-1">{format(new Date(selectedAppointment.appointmentDate), "MMMM d, yyyy")}</p>
+              </div>
+              <div className="p-4 rounded-xl bg-gradient-to-r from-orange-50 to-red-50 border border-orange-100">
+                <label className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Time</label>
+                <p className="text-lg font-bold text-gray-900 mt-1">{selectedAppointment.appointmentTime}</p>
+              </div>
+              <div className="p-4 rounded-xl bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-100">
+                <label className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Type</label>
+                <p className="text-lg font-bold text-gray-900 mt-1">{selectedAppointment.appointmentType}</p>
+              </div>
+              <div className="p-4 rounded-xl bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-100">
+                <label className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Status</label>
+                <p className="text-lg font-bold text-gray-900 mt-1 capitalize">{selectedAppointment.status}</p>
+              </div>
+            </div>
+            
+            {selectedAppointment.doctorName && (
+              <div className="p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100">
+                <label className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Doctor</label>
+                <p className="text-lg font-bold text-gray-900 mt-1">{selectedAppointment.doctorName}</p>
+              </div>
+            )}
+            
+            {selectedAppointment.notes && (
+              <div className="p-4 rounded-xl bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-100">
+                <label className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Notes</label>
+                <p className="text-gray-900 mt-1">{selectedAppointment.notes}</p>
+              </div>
+            )}
+            
+            {selectedAppointment.consultationNotes && (
+              <div className="p-4 rounded-xl bg-gradient-to-r from-lime-50 to-green-50 border border-lime-100">
+                <label className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Consultation Notes</label>
+                <p className="text-gray-900 mt-1">{selectedAppointment.consultationNotes}</p>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-6 border-t border-gray-200/50">
+              <Button 
+                onClick={() => setViewModalOpen(false)}
+                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 font-semibold"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Edit Appointment Modal */}
+      <Modal open={isEditModalOpen} onOpenChange={setEditModalOpen} title="Edit Appointment" size="lg">
+        {selectedAppointment && (
+          <form onSubmit={handleUpdateAppointment} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
+                <Input
+                  label="Appointment Date"
+                  type="date"
+                  value={selectedAppointment.appointmentDate}
+                  onChange={(e) => handleAppointmentChange('appointmentDate', e.target.value)}
+                  className="bg-white/80"
+                />
+              </div>
+              <div className="p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100">
+                <Input
+                  label="Appointment Time"
+                  type="time"
+                  value={selectedAppointment.appointmentTime}
+                  onChange={(e) => handleAppointmentChange('appointmentTime', e.target.value)}
+                  className="bg-white/80"
+                />
+              </div>
+              <div className="p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
+                <Select
+                  label="Appointment Type"
+                  value={selectedAppointment.appointmentType}
+                  onChange={(e) => handleAppointmentChange('appointmentType', e.target.value)}
+                  options={[
+                    { label: 'Consultation', value: 'Consultation' },
+                    { label: 'Follow-up', value: 'Follow-up' },
+                    { label: 'Check-up', value: 'Check-up' },
+                    { label: 'Vaccination', value: 'Vaccination' },
+                    { label: 'X-ray Review', value: 'X-ray Review' },
+                    { label: 'General Check-up', value: 'General Check-up' }
+                  ]}
+                />
+              </div>
+              <div className="p-4 rounded-xl bg-gradient-to-r from-orange-50 to-red-50 border border-orange-100">
+                <Select
+                  label="Status"
+                  value={selectedAppointment.status}
+                  onChange={(e) => handleAppointmentChange('status', e.target.value)}
+                  options={[
+                    { label: 'Scheduled', value: 'scheduled' },
+                    { label: 'Confirmed', value: 'confirmed' },
+                    { label: 'Completed', value: 'completed' },
+                    { label: 'Missed', value: 'missed' },
+                    { label: 'Cancelled', value: 'cancelled' }
+                  ]}
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-4">
+              <div className="p-4 rounded-xl bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-100">
+                <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wide mb-2">Notes</label>
+                <textarea
+                  className="w-full p-3 border border-gray-200 rounded-lg bg-white/80 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  rows={3}
+                  value={selectedAppointment.notes || ''}
+                  onChange={(e) => handleAppointmentChange('notes', e.target.value)}
+                  placeholder="Add any notes about this appointment..."
+                />
+              </div>
+              <div className="p-4 rounded-xl bg-gradient-to-r from-lime-50 to-green-50 border border-lime-100">
+                <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wide mb-2">Consultation Notes</label>
+                <textarea
+                  className="w-full p-3 border border-gray-200 rounded-lg bg-white/80 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  rows={3}
+                  value={selectedAppointment.consultationNotes || ''}
+                  onChange={(e) => handleAppointmentChange('consultationNotes', e.target.value)}
+                  placeholder="Add consultation notes..."
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200/50">
+              <Button 
+                type="button"
+                variant="outline" 
+                onClick={() => setEditModalOpen(false)}
+                className="px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 border-2 border-gray-300 rounded-xl font-semibold transition-all duration-200"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit"
+                className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 font-semibold"
+              >
+                Update Appointment
+              </Button>
+            </div>
+          </form>
+        )}
       </Modal>
     </div>
   );

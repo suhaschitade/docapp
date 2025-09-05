@@ -12,6 +12,7 @@ interface PatientSearchProps {
   className?: string;
   allowNewPatient?: boolean;
   onNewPatient?: (name: string, phone: string) => void;
+  doctorId?: string;
 }
 
 export const PatientSearch: React.FC<PatientSearchProps> = ({
@@ -21,7 +22,8 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
   label = "Patient",
   className = "",
   allowNewPatient = true,
-  onNewPatient
+  onNewPatient,
+  doctorId
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [patients, setPatients] = useState<PatientOption[]>([]);
@@ -39,7 +41,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
       if (searchTerm.length >= 2) {
         setIsLoading(true);
         try {
-          const results = await patientService.getPatientOptions(searchTerm);
+          const results = await patientService.getPatientOptions(searchTerm, doctorId);
           setPatients(results);
         } catch (error) {
           console.error('Error searching patients:', error);
@@ -54,7 +56,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
 
     const debounceTimer = setTimeout(searchPatients, 300);
     return () => clearTimeout(debounceTimer);
-  }, [searchTerm]);
+  }, [searchTerm, doctorId]);
 
   // Handle clicks outside dropdown
   useEffect(() => {
@@ -144,7 +146,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
     setIsOpen(true);
     if (searchTerm.length >= 2) {
       // Trigger search on focus if there's already text
-      patientService.getPatientOptions(searchTerm).then(setPatients).catch(console.error);
+      patientService.getPatientOptions(searchTerm, doctorId).then(setPatients).catch(console.error);
     }
   };
 
@@ -196,7 +198,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
                   onClick={handleNewPatientClick}  
                   className="block w-full mt-2 px-3 py-2 text-left text-blue-600 hover:bg-blue-50 rounded-md text-sm font-medium"
                 >
-                  + Create new patient "{searchTerm}"
+                  + Create new patient &quot;{searchTerm}&quot;
                 </button>
               )}
             </div>

@@ -210,5 +210,36 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         {
             entry.Property("UpdatedAt").CurrentValue = DateTime.UtcNow;
         }
+        
+        // Ensure all DateTime properties have UTC kind to prevent PostgreSQL errors
+        ConvertUnspecifiedDateTimesToUtc();
+    }
+    
+    private void ConvertUnspecifiedDateTimesToUtc()
+    {
+        var entries = ChangeTracker.Entries()
+            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
+
+        foreach (var entry in entries)
+        {
+            foreach (var property in entry.Properties)
+            {
+                if (property.CurrentValue != null)
+                {
+                    if (property.CurrentValue is DateTime dateTime && dateTime.Kind == DateTimeKind.Unspecified)
+                    {
+                        property.CurrentValue = DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
+                    }
+                    else if (property.CurrentValue is DateTime? && property.CurrentValue != null)
+                    {
+                        var nullableDateTime = (DateTime?)property.CurrentValue;
+                        if (nullableDateTime.HasValue && nullableDateTime.Value.Kind == DateTimeKind.Unspecified)
+                        {
+                            property.CurrentValue = DateTime.SpecifyKind(nullableDateTime.Value, DateTimeKind.Utc);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

@@ -113,9 +113,10 @@ class PatientService {
   }
 
   // Get patient options for dropdown/typeahead (simplified format)
-  async getPatientOptions(search?: string): Promise<PatientOption[]> {
+  async getPatientOptions(search?: string, assignedDoctorId?: string): Promise<PatientOption[]> {
     const response = await this.searchPatients({
       search,
+      assignedDoctorId,
       pageSize: 20, // Limit for dropdown
     });
 
@@ -149,6 +150,8 @@ class PatientService {
     dateOfBirth?: string;
   }): Promise<Patient> {
     console.log('➕ Creating patient with data:', patientData);
+    console.log('🌐 API_BASE_URL being used:', API_BASE_URL);
+    console.log('🔍 Environment variable NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
     
     // Parse name into first and last name
     const nameParts = patientData.patientName.trim().split(' ');
@@ -197,6 +200,76 @@ class PatientService {
     );
 
     return this.handleResponse<Patient>(response);
+  }
+
+  // Update an existing patient
+  async updatePatient(id: number, patientData: {
+    patientId: string;
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    gender: string;
+    mobileNumber: string;
+    email?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+    emergencyContactName?: string;
+    emergencyContactPhone?: string;
+    primaryCancerSite: string;
+    cancerStage?: string;
+    histology?: string;
+    diagnosisDate?: string | null;
+    treatmentPathway: string;
+    currentStatus: string;
+    riskLevel: string;
+    assignedDoctorId?: string | null;
+    nextFollowupDate?: string | null;
+  }): Promise<void> {
+    console.log('✏️ Updating patient with ID:', id, 'and data:', patientData);
+    
+    const requestBody = {
+      patientId: patientData.patientId,
+      firstName: patientData.firstName,
+      lastName: patientData.lastName,
+      dateOfBirth: patientData.dateOfBirth,
+      gender: patientData.gender,
+      mobileNumber: patientData.mobileNumber,
+      email: patientData.email || '',
+      address: patientData.address || '',
+      city: patientData.city || '',
+      state: patientData.state || '',
+      postalCode: patientData.postalCode || '',
+      country: patientData.country || 'India',
+      emergencyContactName: patientData.emergencyContactName || '',
+      emergencyContactPhone: patientData.emergencyContactPhone || '',
+      primaryCancerSite: patientData.primaryCancerSite,
+      cancerStage: patientData.cancerStage || '',
+      histology: patientData.histology || '',
+      diagnosisDate: patientData.diagnosisDate ? patientData.diagnosisDate : null,
+      treatmentPathway: patientData.treatmentPathway,
+      currentStatus: patientData.currentStatus,
+      riskLevel: patientData.riskLevel,
+      assignedDoctorId: patientData.assignedDoctorId || null,
+      nextFollowupDate: patientData.nextFollowupDate ? patientData.nextFollowupDate : null
+    };
+    
+    console.log('📤 PUT request body:', requestBody);
+    console.log('🔑 Headers:', this.getAuthHeaders());
+    console.log('🌐 PUT request to:', `${API_BASE_URL}/api/patients/${id}`);
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/patients/${id}`,
+      {
+        method: 'PUT',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(requestBody),
+      }
+    );
+
+    return this.handleResponse<void>(response);
   }
 }
 

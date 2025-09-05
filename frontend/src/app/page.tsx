@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { HeartPulse, Shield, Users, Calendar, TrendingUp, Eye, EyeOff } from 'lucide-react';
+import { HeartPulse, Shield, Calendar, TrendingUp, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -15,7 +15,7 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -263,7 +263,7 @@ export default function LoginPage() {
               
               <div className="mt-8 text-center">
                 <p className="text-sm text-gray-600">
-                  Don't have an account?{' '}
+                  Don&apos;t have an account?{' '}
                   <a href="#" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
                     Contact Administrator
                   </a>

@@ -103,6 +103,10 @@ builder.Services.AddSignalR();
 // AutoMapper
 builder.Services.AddAutoMapper(typeof(Program));
 
+// Notification Services
+builder.Services.AddScoped<PatientManagementApi.Services.INotificationService, PatientManagementApi.Services.NotificationService>();
+builder.Services.AddHostedService<PatientManagementApi.BackgroundServices.NotificationBackgroundService>();
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -200,3 +204,6 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+// Make the Program class accessible for testing
+public partial class Program { }

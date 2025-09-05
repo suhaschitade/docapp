@@ -7,6 +7,9 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Modal } from '@/components/ui/Modal'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { patientService, Patient } from '@/lib/api/patients'
+import { doctorService, Doctor } from '@/lib/api/doctors'
+import { authService } from '@/lib/auth'
 import { 
   MagnifyingGlassIcon,
   UserPlusIcon,
@@ -14,57 +17,9 @@ import {
   PencilIcon,
   TrashIcon,
   FunnelIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ShieldExclamationIcon
 } from '@heroicons/react/24/outline'
-
-// Sample patient data - in real app this would come from API
-const samplePatients = [
-  {
-    id: 1,
-    patientId: 'P001',
-    firstName: 'John',
-    lastName: 'Doe',
-    age: 45,
-    gender: 'Male',
-    mobileNumber: '+91 9876543210',
-    email: 'john.doe@email.com',
-    cancerSite: 'Lung',
-    status: 'Active',
-    riskLevel: 'High',
-    assignedDoctorName: 'Dr. Sarah Wilson',
-    registrationDate: '2024-01-15'
-  },
-  {
-    id: 2,
-    patientId: 'P002',
-    firstName: 'Jane',
-    lastName: 'Smith',
-    age: 38,
-    gender: 'Female',
-    mobileNumber: '+91 9876543211',
-    email: 'jane.smith@email.com',
-    cancerSite: 'Breast',
-    status: 'Active',
-    riskLevel: 'Medium',
-    assignedDoctorName: 'Dr. Michael Johnson',
-    registrationDate: '2024-02-20'
-  },
-  {
-    id: 3,
-    patientId: 'P003',
-    firstName: 'Robert',
-    lastName: 'Johnson',
-    age: 52,
-    gender: 'Male',
-    mobileNumber: '+91 9876543212',
-    email: 'robert.j@email.com',
-    cancerSite: 'Prostate',
-    status: 'Follow-up',
-    riskLevel: 'Low',
-    assignedDoctorName: 'Dr. Emily Davis',
-    registrationDate: '2024-01-28'
-  }
-]
 
 export default function ManagePatientsPage() {
   const router = useRouter()
@@ -72,13 +27,97 @@ export default function ManagePatientsPage() {
   const [isViewModalOpen, setViewModalOpen] = React.useState(false)
   const [isEditModalOpen, setEditModalOpen] = React.useState(false)
   const [isDeleteModalOpen, setDeleteModalOpen] = React.useState(false)
-  const [selectedPatient, setSelectedPatient] = React.useState<any>(null)
-  const [patients, setPatients] = React.useState(samplePatients)
+  const [selectedPatient, setSelectedPatient] = React.useState<Patient | null>(null)
+  const [patients, setPatients] = React.useState<Patient[]>([])
   const [searchTerm, setSearchTerm] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState('')
   const [riskFilter, setRiskFilter] = React.useState('')
+  const [cancerTypeFilter, setCancerTypeFilter] = React.useState('')
   const [showFilters, setShowFilters] = React.useState(false)
-  const [editFormData, setEditFormData] = React.useState<any>({})
+  const [editFormData, setEditFormData] = React.useState<Partial<Patient>>({})
+  const [loading, setLoading] = React.useState(true)
+  const [hasAccess, setHasAccess] = React.useState(false)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [doctors, setDoctors] = React.useState<Doctor[]>([])
+  
+  // Add Patient form state
+  const [newPatientForm, setNewPatientForm] = React.useState({
+    patientId: '',
+    firstName: '',
+    lastName: '',
+    dateOfBirth: '',
+    gender: '',
+    mobileNumber: '',
+    email: '',
+    address: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    primaryCancerSite: '',
+    riskLevel: '',
+  })
+  
+  // Load patients from API
+  const loadPatients = React.useCallback(async () => {
+    try {
+      setLoading(true)
+      const response = await patientService.searchPatients({
+        search: searchTerm,
+        status: statusFilter || undefined,
+        riskLevel: riskFilter || undefined,
+        cancerSite: cancerTypeFilter || undefined,
+        pageSize: 100 // Get more patients for now
+      })
+      setPatients(response.data || [])
+    } catch (err: unknown) {
+      console.error('Error loading patients:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load patients'
+      console.error(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }, [searchTerm, statusFilter, riskFilter, cancerTypeFilter])
+  
+  // Load doctors from API
+  const loadDoctors = React.useCallback(async () => {
+    try {
+      const doctorsData = await doctorService.getDoctors()
+      setDoctors(doctorsData)
+    } catch (err: unknown) {
+      console.error('Error loading doctors:', err)
+    }
+  }, [])
+  
+  // Check user authentication and role-based access
+  React.useEffect(() => {
+    const user = authService.getUser()
+    if (!user || !authService.isAuthenticated()) {
+      router.push('/login')
+      return
+    }
+    
+    // Check if user has Staff or Admin role
+    const userRoles = user.roles || []
+    const hasStaffAccess = userRoles.some(role => ['Staff', 'Admin'].includes(role))
+    
+    if (!hasStaffAccess) {
+      setHasAccess(false)
+      return
+    }
+    
+    setHasAccess(true)
+    loadPatients()
+  }, [router, loadPatients])
+  
+  // Reload patients when filters change
+  React.useEffect(() => {
+    if (hasAccess) {
+      const timer = setTimeout(() => {
+        loadPatients()
+      }, 500) // Debounce search
+      return () => clearTimeout(timer)
+    }
+  }, [hasAccess, loadPatients])
   
   const handleAddPatient = () => {
     setModalOpen(true)
@@ -86,24 +125,44 @@ export default function ManagePatientsPage() {
 
   const handleCloseModal = () => {
     setModalOpen(false)
+    // Reset form
+    setNewPatientForm({
+      patientId: '',
+      firstName: '',
+      lastName: '',
+      dateOfBirth: '',
+      gender: '',
+      mobileNumber: '',
+      email: '',
+      address: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      primaryCancerSite: '',
+      riskLevel: '',
+    })
   }
 
   const handleBackToDashboard = () => {
     router.push('/dashboard')
   }
 
-  const handleViewPatient = (patient: any) => {
+  const handleViewPatient = (patient: Patient) => {
     setSelectedPatient(patient)
     setViewModalOpen(true)
   }
 
-  const handleEditPatient = (patient: any) => {
+  const handleEditPatient = async (patient: Patient) => {
     setSelectedPatient(patient)
     setEditFormData({ ...patient })
+    
+    // Load doctors when opening edit modal
+    await loadDoctors()
+    
     setEditModalOpen(true)
   }
 
-  const handleDeletePatient = (patient: any) => {
+  const handleDeletePatient = (patient: Patient) => {
     setSelectedPatient(patient)
     setDeleteModalOpen(true)
   }
@@ -118,39 +177,142 @@ export default function ManagePatientsPage() {
     }
   }
 
-  const handleEditSubmit = (e: React.FormEvent) => {
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (selectedPatient) {
+    if (!selectedPatient || !editFormData) return
+
+    setIsSubmitting(true)
+    
+    try {
+      // Prepare the data for the API call
+      const updateData = {
+        patientId: editFormData.patientId || selectedPatient.patientId,
+        firstName: editFormData.firstName || selectedPatient.firstName,
+        lastName: editFormData.lastName || selectedPatient.lastName,
+        dateOfBirth: editFormData.dateOfBirth || selectedPatient.dateOfBirth,
+        gender: editFormData.gender || selectedPatient.gender,
+        mobileNumber: editFormData.mobileNumber || selectedPatient.mobileNumber,
+        email: editFormData.email || selectedPatient.email || '',
+        address: editFormData.address || selectedPatient.address || '',
+        city: editFormData.city || selectedPatient.city || '',
+        state: editFormData.state || selectedPatient.state || '',
+        postalCode: editFormData.postalCode || selectedPatient.postalCode || '',
+        country: editFormData.country || selectedPatient.country || 'India',
+        emergencyContactName: editFormData.emergencyContactName || selectedPatient.emergencyContactName || '',
+        emergencyContactPhone: editFormData.emergencyContactPhone || selectedPatient.emergencyContactPhone || '',
+        primaryCancerSite: editFormData.primaryCancerSite || selectedPatient.primaryCancerSite,
+        cancerStage: editFormData.cancerStage || selectedPatient.cancerStage || '',
+        histology: editFormData.histology || selectedPatient.histology || '',
+        diagnosisDate: editFormData.diagnosisDate || selectedPatient.diagnosisDate || null,
+        treatmentPathway: editFormData.treatmentPathway || selectedPatient.treatmentPathway,
+        currentStatus: editFormData.currentStatus || selectedPatient.currentStatus,
+        riskLevel: editFormData.riskLevel || selectedPatient.riskLevel,
+        assignedDoctorId: editFormData.assignedDoctorId || selectedPatient.assignedDoctorId || null,
+        nextFollowupDate: editFormData.nextFollowupDate || selectedPatient.nextFollowupDate || null
+      }
+
+      console.log('🔄 Updating patient:', selectedPatient.id, 'with data:', updateData)
+      
+      // Call the API to update the patient
+      await patientService.updatePatient(selectedPatient.id, updateData)
+      
+      console.log('✅ Patient updated successfully!')
+      
+      // Update local state with the new data
+      const updatedPatient = { ...selectedPatient, ...editFormData }
       setPatients(prevPatients => 
         prevPatients.map(p => 
-          p.id === selectedPatient.id ? { ...editFormData } : p
+          p.id === selectedPatient.id ? updatedPatient : p
         )
       )
+      
+      // Close modal and reset form
       setEditModalOpen(false)
       setSelectedPatient(null)
       setEditFormData({})
+      
+      // Optionally reload patients to get fresh data from server
+      await loadPatients()
+      
+    } catch (error) {
+      console.error('❌ Error updating patient:', error)
+      
+      let errorMessage = 'Failed to update patient. Please try again.'
+      if (error instanceof Error) {
+        if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+          errorMessage = 'Authentication required. Please log in first.'
+        } else {
+          errorMessage = `Error: ${error.message}`
+        }
+      }
+      
+      alert(errorMessage)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
-  const handleEditInputChange = (field: string, value: any) => {
-    setEditFormData((prev: any) => ({
+  const handleEditInputChange = (field: keyof Patient, value: string | number) => {
+    setEditFormData((prev) => ({
       ...prev,
       [field]: value
     }))
   }
 
-  const filteredPatients = patients.filter(patient => {
-    const matchesSearch = searchTerm === '' || 
-      patient.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.patientId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.mobileNumber.includes(searchTerm)
-    
-    const matchesStatus = statusFilter === '' || patient.status === statusFilter
-    const matchesRisk = riskFilter === '' || patient.riskLevel === riskFilter
-    
-    return matchesSearch && matchesStatus && matchesRisk
-  })
+  const handleNewPatientInputChange = (field: keyof typeof newPatientForm, value: string) => {
+    setNewPatientForm((prev) => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  const handleAddPatientSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    console.log('🚀 FORM SUBMITTED - handleAddPatientSubmit called!')
+    console.log('📝 Form data:', newPatientForm)
+    setIsSubmitting(true)
+
+    try {
+      // Create the patient using the API
+      const newPatient = await patientService.createPatient({
+        patientName: `${newPatientForm.firstName} ${newPatientForm.lastName}`,
+        phone: newPatientForm.mobileNumber,
+        email: newPatientForm.email,
+        gender: newPatientForm.gender,
+        dateOfBirth: newPatientForm.dateOfBirth,
+      })
+
+      // Add to local state immediately for better UX
+      setPatients(prevPatients => [newPatient, ...prevPatients])
+      
+      // Close modal and reset form
+      handleCloseModal()
+      
+      // Optionally reload patients to get the most current data
+      await loadPatients()
+      
+      console.log('✅ Patient created successfully:', newPatient)
+    } catch (error) {
+      console.error('❌ Error creating patient:', error)
+      
+      let errorMessage = 'Failed to create patient. Please try again.'
+      if (error instanceof Error) {
+        if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+          errorMessage = 'Authentication required. Please log in first.'
+        } else {
+          errorMessage = `Error: ${error.message}`
+        }
+      }
+      
+      alert(errorMessage)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Since API already handles filtering, we use patients directly
+  // Local filtering is not needed as API handles search, status, risk, and cancer type filters
+  const filteredPatients = patients
 
   const getRiskBadgeColor = (risk: string) => {
     switch (risk) {
@@ -170,9 +332,32 @@ export default function ManagePatientsPage() {
     }
   }
 
+  // Show access denied if user doesn't have permission
+  if (!loading && !hasAccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50">
+        <div className="max-w-md w-full bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 text-center">
+          <div className="mb-6">
+            <ShieldExclamationIcon className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
+            <p className="text-gray-600">
+              You don&apos;t have permission to access Patient Management. This feature is only available to Staff and Admin users.
+            </p>
+          </div>
+          <Button 
+            onClick={handleBackToDashboard}
+            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-xl"
+          >
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen p-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-indigo-50">
-      <PageHeader 
+      <PageHeader
         title="Patient Management" 
         onBack={handleBackToDashboard}
       >
@@ -238,6 +423,19 @@ export default function ManagePatientsPage() {
                   { label: 'Low', value: 'Low' }
                 ]}
               />
+              <Select
+                label="Cancer Type"
+                value={cancerTypeFilter}
+                onChange={(e) => setCancerTypeFilter(e.target.value)}
+                options={[
+                  { label: 'All Cancer Types', value: '' },
+                  { label: 'Lung', value: 'Lung' },
+                  { label: 'Breast', value: 'Breast' },
+                  { label: 'Prostate', value: 'Prostate' },
+                  { label: 'Colorectal', value: 'Colorectal' },
+                  { label: 'Other', value: 'Other' }
+                ]}
+              />
             </div>
           )}
         </div>
@@ -300,11 +498,11 @@ export default function ManagePatientsPage() {
                         <div className="text-sm text-gray-500">{patient.email}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{patient.cancerSite}</div>
+                        <div className="text-sm text-gray-900">{patient.primaryCancerSite}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(patient.status)}`}>
-                          {patient.status}
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(patient.currentStatus)}`}>
+                          {patient.currentStatus}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -357,31 +555,92 @@ export default function ManagePatientsPage() {
 
       {/* Add Patient Modal */}
       <Modal open={isModalOpen} onOpenChange={setModalOpen} title="Add New Patient" size="lg">
-        <form className="space-y-6">
+        <form onSubmit={handleAddPatientSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input label="Patient ID" placeholder="P004" required />
+            <Input 
+              label="Patient ID" 
+              placeholder="Auto-generated" 
+              value={newPatientForm.patientId}
+              onChange={(e) => handleNewPatientInputChange('patientId', e.target.value)}
+              disabled
+            />
             <div></div>
-            <Input label="First Name" placeholder="John" required />
-            <Input label="Last Name" placeholder="Doe" required />
-            <Input type="date" label="Date of Birth" required />
+            <Input 
+              label="First Name" 
+              placeholder="John" 
+              value={newPatientForm.firstName}
+              onChange={(e) => handleNewPatientInputChange('firstName', e.target.value)}
+              required 
+            />
+            <Input 
+              label="Last Name" 
+              placeholder="Doe" 
+              value={newPatientForm.lastName}
+              onChange={(e) => handleNewPatientInputChange('lastName', e.target.value)}
+              required 
+            />
+            <Input 
+              type="date" 
+              label="Date of Birth" 
+              value={newPatientForm.dateOfBirth}
+              onChange={(e) => handleNewPatientInputChange('dateOfBirth', e.target.value)}
+              required 
+            />
             <Select
               label="Gender"
               placeholder="Select Gender"
+              value={newPatientForm.gender}
+              onChange={(e) => handleNewPatientInputChange('gender', e.target.value)}
               options={[
                 { label: 'Male', value: 'Male' },
-                { label: 'Female', value: 'Female' }
+                { label: 'Female', value: 'Female' },
+                { label: 'Other', value: 'Other' }
               ]}
               required
             />
-            <Input label="Mobile Number" placeholder="+91 9876543210" required />
-            <Input type="email" label="Email" placeholder="patient@email.com" />
-            <Input label="Address" placeholder="123 Main Street" required />
-            <Input label="City" placeholder="Mumbai" required />
-            <Input label="State" placeholder="Maharashtra" required />
-            <Input label="Postal Code" placeholder="400001" required />
+            <Input 
+              label="Mobile Number" 
+              placeholder="+91 9876543210" 
+              value={newPatientForm.mobileNumber}
+              onChange={(e) => handleNewPatientInputChange('mobileNumber', e.target.value)}
+              required 
+            />
+            <Input 
+              type="email" 
+              label="Email" 
+              placeholder="patient@email.com" 
+              value={newPatientForm.email}
+              onChange={(e) => handleNewPatientInputChange('email', e.target.value)}
+            />
+            <Input 
+              label="Address" 
+              placeholder="123 Main Street" 
+              value={newPatientForm.address}
+              onChange={(e) => handleNewPatientInputChange('address', e.target.value)}
+            />
+            <Input 
+              label="City" 
+              placeholder="Mumbai" 
+              value={newPatientForm.city}
+              onChange={(e) => handleNewPatientInputChange('city', e.target.value)}
+            />
+            <Input 
+              label="State" 
+              placeholder="Maharashtra" 
+              value={newPatientForm.state}
+              onChange={(e) => handleNewPatientInputChange('state', e.target.value)}
+            />
+            <Input 
+              label="Postal Code" 
+              placeholder="400001" 
+              value={newPatientForm.postalCode}
+              onChange={(e) => handleNewPatientInputChange('postalCode', e.target.value)}
+            />
             <Select
               label="Primary Cancer Site"
               placeholder="Select Cancer Site"
+              value={newPatientForm.primaryCancerSite}
+              onChange={(e) => handleNewPatientInputChange('primaryCancerSite', e.target.value)}
               options={[
                 { label: 'Lung', value: 'Lung' },
                 { label: 'Breast', value: 'Breast' },
@@ -389,23 +648,36 @@ export default function ManagePatientsPage() {
                 { label: 'Colorectal', value: 'Colorectal' },
                 { label: 'Other', value: 'Other' }
               ]}
-              required
             />
             <Select
               label="Risk Level"
               placeholder="Select Risk Level"
+              value={newPatientForm.riskLevel}
+              onChange={(e) => handleNewPatientInputChange('riskLevel', e.target.value)}
               options={[
                 { label: 'Low', value: 'Low' },
                 { label: 'Medium', value: 'Medium' },
                 { label: 'High', value: 'High' },
                 { label: 'Critical', value: 'Critical' }
               ]}
-              required
             />
           </div>
           <div className="flex justify-end space-x-3 pt-6 border-t">
-            <Button variant="outline" onClick={handleCloseModal}>Cancel</Button>
-            <Button type="submit" variant="primary">Add Patient</Button>
+            <Button 
+              variant="outline" 
+              type="button"
+              onClick={handleCloseModal}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              variant="primary" 
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Creating...' : 'Add Patient'}
+            </Button>
           </div>
         </form>
       </Modal>
@@ -444,13 +716,13 @@ export default function ManagePatientsPage() {
               <div className="space-y-4">
                 <div className="p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100">
                   <label className="text-sm font-semibold text-green-700 uppercase tracking-wide">Cancer Site</label>
-                  <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.cancerSite}</p>
+                  <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.primaryCancerSite}</p>
                 </div>
                 <div className="p-4 rounded-xl bg-gradient-to-r from-slate-50 to-gray-50 border border-slate-100">
                   <label className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Status</label>
                   <div className="mt-2">
-                    <span className={`inline-flex px-4 py-2 text-sm font-bold rounded-full ${getStatusBadgeColor(selectedPatient.status)}`}>
-                      {selectedPatient.status}
+                    <span className={`inline-flex px-4 py-2 text-sm font-bold rounded-full ${getStatusBadgeColor(selectedPatient.currentStatus)}`}>
+                      {selectedPatient.currentStatus}
                     </span>
                   </div>
                 </div>
@@ -540,8 +812,8 @@ export default function ManagePatientsPage() {
               />
               <Select
                 label="Primary Cancer Site"
-                value={editFormData.cancerSite || ''}
-                onChange={(e) => handleEditInputChange('cancerSite', e.target.value)}
+                value={editFormData.primaryCancerSite || ''}
+                onChange={(e) => handleEditInputChange('primaryCancerSite', e.target.value)}
                 options={[
                   { label: 'Lung', value: 'Lung' },
                   { label: 'Breast', value: 'Breast' },
@@ -553,8 +825,8 @@ export default function ManagePatientsPage() {
               />
               <Select
                 label="Status"
-                value={editFormData.status || ''}
-                onChange={(e) => handleEditInputChange('status', e.target.value)}
+                value={editFormData.currentStatus || ''}
+                onChange={(e) => handleEditInputChange('currentStatus', e.target.value)}
                 options={[
                   { label: 'Active', value: 'Active' },
                   { label: 'Follow-up', value: 'Follow-up' },
@@ -574,16 +846,42 @@ export default function ManagePatientsPage() {
                 ]}
                 required
               />
-              <Input 
-                label="Assigned Doctor" 
-                value={editFormData.assignedDoctorName || ''}
-                onChange={(e) => handleEditInputChange('assignedDoctorName', e.target.value)}
-                required 
+              <Select
+                label="Assigned Doctor"
+                value={editFormData.assignedDoctorId || ''}
+                onChange={(e) => {
+                  const doctorId = e.target.value
+                  const selectedDoctor = doctors.find(d => d.id === doctorId)
+                  handleEditInputChange('assignedDoctorId', doctorId)
+                  handleEditInputChange('assignedDoctorName', selectedDoctor ? selectedDoctor.displayName : '')
+                }}
+                options={[
+                  { label: 'Select Doctor', value: '' },
+                  ...doctors.map(doctor => ({
+                    label: doctor.displayName,
+                    value: doctor.id
+                  }))
+                ]}
+                placeholder="Select a doctor"
+                required
               />
             </div>
             <div className="flex justify-end space-x-3 pt-6 border-t">
-              <Button variant="outline" type="button" onClick={() => setEditModalOpen(false)}>Cancel</Button>
-              <Button type="submit" variant="primary">Update Patient</Button>
+              <Button 
+                variant="outline" 
+                type="button" 
+                onClick={() => setEditModalOpen(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                variant="primary"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Updating...' : 'Update Patient'}
+              </Button>
             </div>
           </form>
         )}

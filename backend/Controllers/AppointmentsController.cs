@@ -40,15 +40,19 @@ public class AppointmentsController : ControllerBase
                 .Include(a => a.Doctor)
                 .AsQueryable();
 
-            // Apply filters
+            // Apply filters - use date range filtering to handle timezones properly
             if (startDate.HasValue)
             {
-                query = query.Where(a => a.AppointmentDate >= startDate.Value.ToUniversalTime().Date);
+                // Start of the day in UTC
+                var startOfDay = DateTime.SpecifyKind(startDate.Value.Date, DateTimeKind.Utc);
+                query = query.Where(a => a.AppointmentDate >= startOfDay);
             }
 
             if (endDate.HasValue)
             {
-                query = query.Where(a => a.AppointmentDate <= endDate.Value.ToUniversalTime().Date);
+                // End of the day in UTC (next day at 00:00:00)
+                var endOfDay = DateTime.SpecifyKind(endDate.Value.Date.AddDays(1), DateTimeKind.Utc);
+                query = query.Where(a => a.AppointmentDate < endOfDay);
             }
 
             if (!string.IsNullOrEmpty(doctorId))
@@ -224,23 +228,42 @@ var end = endDate?.ToUniversalTime() ?? DateTime.UtcNow.AddDays(30);
                 return BadRequest($"Patient with ID {createAppointmentDto.PatientId} not found");
             }
 
-            // Check for appointment conflicts
-            var conflictingAppointment = await _context.Appointments
-                .AnyAsync(a => a.DoctorId == createAppointmentDto.DoctorId &&
-                              a.AppointmentDate == createAppointmentDto.AppointmentDate &&
-                              a.AppointmentTime == TimeOnly.FromTimeSpan(createAppointmentDto.AppointmentTime) &&
-                              a.Status != AppointmentStatusType.Cancelled);
-
-            if (conflictingAppointment)
+            // Validate doctor exists if DoctorId is provided
+            string? validDoctorId = null;
+            if (!string.IsNullOrEmpty(createAppointmentDto.DoctorId))
             {
-                return BadRequest("An appointment already exists for this doctor at the specified date and time");
+                var doctorExists = await _context.Users.AnyAsync(u => u.Id == createAppointmentDto.DoctorId);
+                if (doctorExists)
+                {
+                    validDoctorId = createAppointmentDto.DoctorId;
+                }
+                else
+                {
+                    return BadRequest($"Doctor with ID {createAppointmentDto.DoctorId} not found");
+                }
+            }
+
+            // Check for appointment conflicts (only if there's a valid doctor)
+            var appointmentDateUtc = DateTime.SpecifyKind(createAppointmentDto.AppointmentDate, DateTimeKind.Utc);
+            if (!string.IsNullOrEmpty(validDoctorId))
+            {
+                var conflictingAppointment = await _context.Appointments
+                    .AnyAsync(a => a.DoctorId == validDoctorId &&
+                                  a.AppointmentDate == appointmentDateUtc &&
+                                  a.AppointmentTime == TimeOnly.FromTimeSpan(createAppointmentDto.AppointmentTime) &&
+                                  a.Status != AppointmentStatusType.Cancelled);
+
+                if (conflictingAppointment)
+                {
+                    return BadRequest("An appointment already exists for this doctor at the specified date and time");
+                }
             }
 
             var appointment = new Appointment
             {
                 PatientId = createAppointmentDto.PatientId,
-                DoctorId = createAppointmentDto.DoctorId,
-                AppointmentDate = createAppointmentDto.AppointmentDate,
+                DoctorId = validDoctorId,
+                AppointmentDate = DateTime.SpecifyKind(createAppointmentDto.AppointmentDate, DateTimeKind.Utc),
                 AppointmentTime = TimeOnly.FromTimeSpan(createAppointmentDto.AppointmentTime),
                 AppointmentType = createAppointmentDto.AppointmentType,
                 Status = AppointmentStatusType.Scheduled,
@@ -299,6 +322,21 @@ var end = endDate?.ToUniversalTime() ?? DateTime.UtcNow.AddDays(30);
             createAppointmentDto.PatientName, createAppointmentDto.Phone, createAppointmentDto.DoctorId, createAppointmentDto.AppointmentDate, createAppointmentDto.AppointmentTime);
         try
         {
+            // Validate doctor exists if DoctorId is provided
+            string? validDoctorId = null;
+            if (!string.IsNullOrEmpty(createAppointmentDto.DoctorId))
+            {
+                var doctorExists = await _context.Users.AnyAsync(u => u.Id == createAppointmentDto.DoctorId);
+                if (doctorExists)
+                {
+                    validDoctorId = createAppointmentDto.DoctorId;
+                }
+                else
+                {
+                    _logger.LogWarning("Doctor with ID {DoctorId} not found, creating appointment without doctor", createAppointmentDto.DoctorId);
+                }
+            }
+
             // Try to find existing patient by name and phone
             var patient = await _context.Patients
                 .FirstOrDefaultAsync(p => 
@@ -341,23 +379,27 @@ var end = endDate?.ToUniversalTime() ?? DateTime.UtcNow.AddDays(30);
                 await _context.SaveChangesAsync();
             }
 
-            // Check for appointment conflicts
-            var conflictingAppointment = await _context.Appointments
-                .AnyAsync(a => a.DoctorId == createAppointmentDto.DoctorId &&
-                              a.AppointmentDate == createAppointmentDto.AppointmentDate &&
-                              a.AppointmentTime == TimeOnly.FromTimeSpan(createAppointmentDto.AppointmentTime) &&
-                              a.Status != AppointmentStatusType.Cancelled);
-
-            if (conflictingAppointment)
+            // Check for appointment conflicts (only if there's a valid doctor)
+            var appointmentDateUtc = DateTime.SpecifyKind(createAppointmentDto.AppointmentDate, DateTimeKind.Utc);
+            if (!string.IsNullOrEmpty(validDoctorId))
             {
-                return BadRequest("An appointment already exists for this doctor at the specified date and time");
+                var conflictingAppointment = await _context.Appointments
+                    .AnyAsync(a => a.DoctorId == validDoctorId &&
+                                  a.AppointmentDate == appointmentDateUtc &&
+                                  a.AppointmentTime == TimeOnly.FromTimeSpan(createAppointmentDto.AppointmentTime) &&
+                                  a.Status != AppointmentStatusType.Cancelled);
+
+                if (conflictingAppointment)
+                {
+                    return BadRequest("An appointment already exists for this doctor at the specified date and time");
+                }
             }
 
             var appointment = new Appointment
             {
                 PatientId = patient.Id,
-                DoctorId = createAppointmentDto.DoctorId,
-                AppointmentDate = createAppointmentDto.AppointmentDate,
+                DoctorId = validDoctorId,
+                AppointmentDate = DateTime.SpecifyKind(createAppointmentDto.AppointmentDate, DateTimeKind.Utc),
                 AppointmentTime = TimeOnly.FromTimeSpan(createAppointmentDto.AppointmentTime),
                 AppointmentType = createAppointmentDto.AppointmentType,
                 Status = AppointmentStatusType.Scheduled,
@@ -421,10 +463,11 @@ var end = endDate?.ToUniversalTime() ?? DateTime.UtcNow.AddDays(30);
             }
 
             // Check for appointment conflicts (excluding current appointment)
+            var appointmentDateUtc = DateTime.SpecifyKind(updateAppointmentDto.AppointmentDate, DateTimeKind.Utc);
             var conflictingAppointment = await _context.Appointments
                 .AnyAsync(a => a.Id != id &&
                               a.DoctorId == appointment.DoctorId &&
-                              a.AppointmentDate == updateAppointmentDto.AppointmentDate &&
+                              a.AppointmentDate == appointmentDateUtc &&
                               a.AppointmentTime == TimeOnly.FromTimeSpan(updateAppointmentDto.AppointmentTime) &&
                               a.Status != AppointmentStatusType.Cancelled);
 
@@ -434,7 +477,7 @@ var end = endDate?.ToUniversalTime() ?? DateTime.UtcNow.AddDays(30);
             }
 
             // Update properties
-            appointment.AppointmentDate = updateAppointmentDto.AppointmentDate;
+            appointment.AppointmentDate = DateTime.SpecifyKind(updateAppointmentDto.AppointmentDate, DateTimeKind.Utc);
             appointment.AppointmentTime = TimeOnly.FromTimeSpan(updateAppointmentDto.AppointmentTime);
             appointment.AppointmentType = updateAppointmentDto.AppointmentType;
             
@@ -445,7 +488,7 @@ var end = endDate?.ToUniversalTime() ?? DateTime.UtcNow.AddDays(30);
             
             appointment.Notes = updateAppointmentDto.Notes;
             appointment.ConsultationNotes = updateAppointmentDto.ConsultationNotes;
-            appointment.NextAppointmentDate = updateAppointmentDto.NextAppointmentDate;
+            appointment.NextAppointmentDate = updateAppointmentDto.NextAppointmentDate.HasValue ? DateTime.SpecifyKind(updateAppointmentDto.NextAppointmentDate.Value, DateTimeKind.Utc) : null;
             appointment.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();

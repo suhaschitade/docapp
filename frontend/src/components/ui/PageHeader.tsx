@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from './Button';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { NotificationDropdown } from './NotificationDropdown';
 
 interface PageHeaderProps {
   title: string;
@@ -26,11 +27,10 @@ export function PageHeader({ title, onBack, children, showBackButton = true }: P
           {title}
         </h1>
       </div>
-      {children && (
-        <div className="flex items-center space-x-4">
-          {children}
-        </div>
-      )}
+      <div className="flex items-center space-x-4">
+        <NotificationDropdown />
+        {children}
+      </div>
     </header>
   );
 }
