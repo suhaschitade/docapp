@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
@@ -11,7 +11,7 @@ import { Modal } from "@/components/ui/Modal";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { format } from "date-fns";
 import { CalendarDaysIcon, ClockIcon, UserIcon, PlusIcon, EyeIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
-import { appointmentService, type AppointmentCalendar, type Appointment } from "@/lib/api/appointments";
+import { appointmentService, type Appointment } from "@/lib/api/appointments";
 import { doctorService, type Doctor } from "@/lib/api/doctors";
 import { PatientSearch } from "@/components/ui/PatientSearch";
 import { type PatientOption } from "@/lib/api/patients";
@@ -55,7 +55,7 @@ const AppointmentsPage = () => {
 
   const selectedDate = Array.isArray(date) ? date[0] : date;
 
-  const fetchAppointments = () => {
+  const fetchAppointments = useCallback(() => {
     if (!selectedDate) return;
     
     console.log('🚀 Fetching appointments for:', format(selectedDate, "yyyy-MM-dd"), 'Doctor:', selectedDoctor);
@@ -90,7 +90,7 @@ const AppointmentsPage = () => {
       .catch((error) => {
         console.error('❌ API Error:', error);
       });
-  };
+  }, [selectedDate, selectedDoctor]);
 
   const handleSaveAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,7 +193,7 @@ const AppointmentsPage = () => {
         status: selectedAppointment.status,
         notes: selectedAppointment.notes || '',
         consultationNotes: selectedAppointment.consultationNotes || '',
-        nextAppointmentDate: selectedAppointment.nextAppointmentDate || null,
+        nextAppointmentDate: selectedAppointment.nextAppointmentDate || undefined,
       };
 
       await appointmentService.updateAppointment(selectedAppointment.id, updatedData);
@@ -260,7 +260,7 @@ const AppointmentsPage = () => {
       console.log('🔄 useEffect triggered - fetching appointments');
       fetchAppointments();
     }
-  }, [selectedDate, selectedDoctor]);
+  }, [selectedDate, selectedDoctor, fetchAppointments]);
 
   const appointmentsForSelectedDate = selectedDate ? getAppointmentsForDate(selectedDate) : [];
 
@@ -311,10 +311,6 @@ const AppointmentsPage = () => {
     label: doctor.displayName
   }));
 
-  // Get selected doctor info
-  const getSelectedDoctorInfo = () => {
-    return doctors.find(doctor => doctor.id === selectedDoctor);
-  };
 
   return (
     <div className="min-h-screen p-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-indigo-50">

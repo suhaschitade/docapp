@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/auth';
 import { notificationService, Notification } from '@/lib/api/notifications';
@@ -10,7 +10,6 @@ import {
   BellIcon, 
   CheckIcon, 
   TrashIcon, 
-  FunnelIcon, 
   MagnifyingGlassIcon,
   EyeIcon,
   EyeSlashIcon
@@ -35,18 +34,10 @@ export default function NotificationsPage() {
 
   const pageSize = 10;
 
-  useEffect(() => {
-    if (!authService.isAuthenticated()) {
-      router.push('/');
-      return;
-    }
-    fetchNotifications();
-  }, [currentPage, filters, router]);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     setIsLoading(true);
     try {
-      const params: any = {
+      const params: Record<string, unknown> = {
         page: currentPage,
         pageSize,
       };
@@ -79,7 +70,15 @@ export default function NotificationsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentPage, pageSize, filters]);
+
+  useEffect(() => {
+    if (!authService.isAuthenticated()) {
+      router.push('/');
+      return;
+    }
+    fetchNotifications();
+  }, [currentPage, filters, router, fetchNotifications]);
 
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.isRead) {

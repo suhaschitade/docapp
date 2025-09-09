@@ -15,11 +15,15 @@ import {
   CalendarIcon
 } from '@heroicons/react/24/outline';
 
-interface User {
+interface ProfileUser {
+  id?: string;
+  userName?: string;
   firstName?: string;
   lastName?: string;
   email?: string;
   roles?: string[];
+  department?: string;
+  specialization?: string;
   phoneNumber?: string;
   address?: string;
   dateJoined?: string;
@@ -27,7 +31,7 @@ interface User {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<ProfileUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -45,15 +49,16 @@ export default function ProfilePage() {
     }
 
     const userData = authService.getUser();
-    setUser(userData);
+    setUser(userData as ProfileUser);
     
     // Initialize form data
+    const profileUser = userData as ProfileUser;
     setFormData({
-      firstName: userData?.firstName || '',
-      lastName: userData?.lastName || '',
-      email: userData?.email || '',
-      phoneNumber: userData?.phoneNumber || '',
-      address: userData?.address || ''
+      firstName: profileUser?.firstName || '',
+      lastName: profileUser?.lastName || '',
+      email: profileUser?.email || '',
+      phoneNumber: profileUser?.phoneNumber || '',
+      address: profileUser?.address || ''
     });
     
     setIsLoading(false);
