@@ -72,6 +72,8 @@ cp frontend/package-lock.json deployment-package/frontend/
 # Copy configuration files
 cp deployment/nginx.conf deployment-package/config/
 cp deployment/docapp-api.service deployment-package/config/
+cp deployment/appsettings.Production.json deployment-package/config/
+cp deployment/setup-database.sql deployment-package/config/
 cp deployment/setup-server.sh deployment-package/scripts/
 cp deployment/start-services.sh deployment-package/scripts/
 

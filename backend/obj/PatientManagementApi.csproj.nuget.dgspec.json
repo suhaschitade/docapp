@@ -1,26 +1,26 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Workspace\\mac\\docapp\\backend\\PatientManagementApi.csproj": {}
+    "/Users/suhaschitade/workspace/docapp/docapp/backend/PatientManagementApi.csproj": {}
   },
   "projects": {
-    "D:\\Workspace\\mac\\docapp\\backend\\PatientManagementApi.csproj": {
+    "/Users/suhaschitade/workspace/docapp/docapp/backend/PatientManagementApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Workspace\\mac\\docapp\\backend\\PatientManagementApi.csproj",
+        "projectUniqueName": "/Users/suhaschitade/workspace/docapp/docapp/backend/PatientManagementApi.csproj",
         "projectName": "PatientManagementApi",
-        "projectPath": "D:\\Workspace\\mac\\docapp\\backend\\PatientManagementApi.csproj",
-        "packagesPath": "C:\\Users\\suhas\\.nuget\\packages\\",
-        "outputPath": "D:\\Workspace\\mac\\docapp\\backend\\obj\\",
+        "projectPath": "/Users/suhaschitade/workspace/docapp/docapp/backend/PatientManagementApi.csproj",
+        "packagesPath": "/Users/suhaschitade/.nuget/packages/",
+        "outputPath": "/Users/suhaschitade/workspace/docapp/docapp/backend/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\suhas\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "/Users/suhaschitade/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
-          "C:\\Program Files\\dotnet\\library-packs": {},
+          "/opt/homebrew/Cellar/dotnet/9.0.7/libexec/library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -39,7 +39,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "9.0.100"
       },
       "frameworks": {
         "net9.0": {
@@ -113,7 +113,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.303/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/opt/homebrew/Cellar/dotnet/9.0.7/libexec/sdk/9.0.108/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

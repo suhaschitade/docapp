@@ -78,15 +78,17 @@ if ! sudo -u postgres psql -lqt | cut -d \| -f 1 | grep -qw docapp_db; then
     
     # Generate secure password
     DB_PASSWORD=$(openssl rand -base64 32)
+    # Escape special characters for sed
+    DB_PASSWORD_ESCAPED=$(printf '%s\n' "$DB_PASSWORD" | sed 's/[[\/.*]/\\&/g')
     
     # Update the SQL file with generated password
-    sed -i "s/your_secure_password_here/$DB_PASSWORD/g" config/setup-database.sql
+    sed -i "s/your_secure_password_here/$DB_PASSWORD_ESCAPED/g" config/setup-database.sql
     
     # Run database setup
-    sudo -u postgres psql -f ../setup-database.sql
+    sudo -u postgres psql -f config/setup-database.sql
     
     # Update appsettings with the generated password
-    sed -i "s/your_secure_password_here/$DB_PASSWORD/g" /var/www/docapp/backend/appsettings.Production.json
+    sed -i "s/your_secure_password_here/$DB_PASSWORD_ESCAPED/g" /var/www/docapp/backend/appsettings.Production.json
     
     print_status "Database password generated and configured"
 else
