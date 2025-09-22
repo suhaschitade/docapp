@@ -20,8 +20,9 @@ interface AuthResponse {
   user: User;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5145';
-const API_URL = `${API_BASE_URL}/api`;
+import { getApiBaseUrl } from './api-config';
+
+const API_URL = getApiBaseUrl();
 
 export const authService = {
   async login(data: LoginData): Promise<AuthResponse> {

@@ -1,6 +1,7 @@
 import { authService } from '../auth';
+import { getApiBaseUrl } from '../api-config';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5145';
+const API_BASE_URL = getApiBaseUrl();
 
 interface ApiResponse<T> {
   data: T;
@@ -102,7 +103,7 @@ class TreatmentService {
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString());
 
-    const url = `${API_BASE_URL}/api/treatments?${queryParams}`;
+    const url = `${API_BASE_URL}/treatments?${queryParams}`;
     console.log('🌐 GET request to:', url);
     console.log('🔑 Headers:', this.getAuthHeaders());
 
@@ -118,7 +119,7 @@ class TreatmentService {
     console.log('🔍 Getting treatment with id:', id);
 
     const response = await fetch(
-      `${API_BASE_URL}/api/treatments/${id}`,
+      `${API_BASE_URL}/treatments/${id}`,
       {
         headers: this.getAuthHeaders(),
       }
@@ -132,7 +133,7 @@ class TreatmentService {
     console.log('🔍 Getting treatments for patient:', patientId);
 
     const response = await fetch(
-      `${API_BASE_URL}/api/treatments/patient/${patientId}`,
+      `${API_BASE_URL}/treatments/patient/${patientId}`,
       {
         headers: this.getAuthHeaders(),
       }
@@ -146,7 +147,7 @@ class TreatmentService {
     console.log('➕ Creating treatment with data:', treatmentData);
     
     const response = await fetch(
-      `${API_BASE_URL}/api/treatments`,
+      `${API_BASE_URL}/treatments`,
       {
         method: 'POST',
         headers: this.getAuthHeaders(),
@@ -162,7 +163,7 @@ class TreatmentService {
     console.log('📝 Updating treatment with id:', id, 'data:', treatmentData);
     
     const response = await fetch(
-      `${API_BASE_URL}/api/treatments/${id}`,
+      `${API_BASE_URL}/treatments/${id}`,
       {
         method: 'PUT',
         headers: this.getAuthHeaders(),
@@ -178,7 +179,7 @@ class TreatmentService {
     console.log('🗑️ Deleting treatment with id:', id);
     
     const response = await fetch(
-      `${API_BASE_URL}/api/treatments/${id}`,
+      `${API_BASE_URL}/treatments/${id}`,
       {
         method: 'DELETE',
         headers: this.getAuthHeaders(),
@@ -193,7 +194,7 @@ class TreatmentService {
     console.log('📊 Getting treatment statistics');
 
     const response = await fetch(
-      `${API_BASE_URL}/api/treatments/statistics`,
+      `${API_BASE_URL}/treatments/statistics`,
       {
         headers: this.getAuthHeaders(),
       }

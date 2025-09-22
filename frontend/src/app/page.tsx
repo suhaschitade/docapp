@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { HeartPulse, Shield, Calendar, TrendingUp, Eye, EyeOff } from 'lucide-react';
+import { getApiBaseUrl } from '@/lib/api-config';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -15,7 +16,7 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`, {
+      const response = await fetch(`${getApiBaseUrl()}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

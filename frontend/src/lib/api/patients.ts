@@ -1,6 +1,7 @@
 import { authService } from '../auth';
+import { getApiBaseUrl } from '../api-config';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5145';
+const API_BASE_URL = getApiBaseUrl();
 
 interface ApiResponse<T> {
   data: T;
@@ -101,7 +102,7 @@ class PatientService {
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString());
 
-    const url = `${API_BASE_URL}/api/patients?${queryParams}`;
+    const url = `${API_BASE_URL}/patients?${queryParams}`;
     console.log('🌐 GET request to:', url);
     console.log('🔑 Headers:', this.getAuthHeaders());
 
@@ -132,7 +133,7 @@ class PatientService {
   // Get single patient
   async getPatient(id: number): Promise<Patient> {
     const response = await fetch(
-      `${API_BASE_URL}/api/patients/${id}`,
+      `${API_BASE_URL}/patients/${id}`,
       {
         headers: this.getAuthHeaders(),
       }
@@ -188,10 +189,10 @@ class PatientService {
     
     console.log('📤 Request body:', requestBody);
     console.log('🔑 Headers:', this.getAuthHeaders());
-    console.log('🌐 POST request to:', `${API_BASE_URL}/api/patients`);
+    console.log('🌐 POST request to:', `${API_BASE_URL}/patients`);
 
     const response = await fetch(
-      `${API_BASE_URL}/api/patients`,
+      `${API_BASE_URL}/patients`,
       {
         method: 'POST',
         headers: this.getAuthHeaders(),
@@ -258,10 +259,10 @@ class PatientService {
     
     console.log('📤 PUT request body:', requestBody);
     console.log('🔑 Headers:', this.getAuthHeaders());
-    console.log('🌐 PUT request to:', `${API_BASE_URL}/api/patients/${id}`);
+    console.log('🌐 PUT request to:', `${API_BASE_URL}/patients/${id}`);
 
     const response = await fetch(
-      `${API_BASE_URL}/api/patients/${id}`,
+      `${API_BASE_URL}/patients/${id}`,
       {
         method: 'PUT',
         headers: this.getAuthHeaders(),

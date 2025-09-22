@@ -1,0 +1,40 @@
+[Unit]
+Description=DocApp ASP.NET Core Web API
+After=network.target
+After=postgresql.service
+
+[Service]
+Type=notify
+# Start the service with a specific user (recommended for security)
+User=www-data
+Group=www-data
+
+# Application configuration
+WorkingDirectory=/var/www/docapp/backend
+ExecStart=/usr/share/dotnet/dotnet /var/www/docapp/backend/PatientManagementApi.dll
+Restart=always
+RestartSec=10
+
+# Environment variables
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=ASPNETCORE_URLS=http://127.0.0.1:5000
+Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+
+# Logging configuration
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=docapp-api
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/docapp/backend/logs
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target

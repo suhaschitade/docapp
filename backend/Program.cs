@@ -90,7 +90,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "https://localhost:3000")
+        policy.WithOrigins(
+                "http://localhost:3000",      // Local development
+                "https://localhost:3000",     // Local development with HTTPS
+                "http://127.0.0.1:3000",      // Alternative localhost
+                "http://192.168.1.10:3000"    // Network access - allows access from network IP
+              )
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();

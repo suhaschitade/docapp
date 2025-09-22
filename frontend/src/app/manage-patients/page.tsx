@@ -356,42 +356,43 @@ export default function ManagePatientsPage() {
   }
 
   return (
-    <div className="min-h-screen p-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-indigo-50">
+    <div className="min-h-screen p-4 sm:p-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-indigo-50">
       <PageHeader
         title="Patient Management" 
         onBack={handleBackToDashboard}
       >
         <Button 
           onClick={handleAddPatient} 
-          className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+          className="flex items-center space-x-1 sm:space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-3 py-2 sm:px-6 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 text-sm sm:text-base"
         >
-          <UserPlusIcon className="h-5 w-5" />
-          <span>Add Patient</span>
+          <UserPlusIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="hidden sm:inline">Add Patient</span>
+          <span className="sm:hidden">Add</span>
         </Button>
       </PageHeader>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 pb-4">
         {/* Search and Filters */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-4 sm:p-8 mb-4 sm:mb-8 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
             <div className="flex-1 max-w-lg">
               <div className="relative">
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 z-10" />
                 <Input
                   type="text"
-                  placeholder="Search patients by name, ID, or phone..."
+                  placeholder="Search patients..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 text-gray-900 placeholder:text-gray-500"
                 />
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <Button 
                 variant="outline" 
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center space-x-2 border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 rounded-xl px-4 py-2 transition-all duration-200"
+                className="flex items-center space-x-1 sm:space-x-2 border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 rounded-xl px-3 py-2 sm:px-4 transition-all duration-200 text-sm sm:text-base"
               >
                 <FunnelIcon className="h-4 w-4" />
                 <span>Filters</span>
@@ -442,8 +443,8 @@ export default function ManagePatientsPage() {
 
         {/* Patients List */}
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden">
-          <div className="px-8 py-6 border-b border-gray-200/50">
-            <h2 className="text-2xl font-bold text-gray-800">
+          <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-200/50">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
               Patients ({filteredPatients.length})
             </h2>
           </div>
@@ -453,221 +454,343 @@ export default function ManagePatientsPage() {
               <p className="text-gray-500">No patients found matching your search criteria.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Patient
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Contact
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Cancer Site
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Risk Level
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Assigned Doctor
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredPatients.map((patient) => (
-                    <tr key={patient.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {patient.firstName} {patient.lastName}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            ID: {patient.patientId} • Age: {patient.age} • {patient.gender}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{patient.mobileNumber}</div>
-                        <div className="text-sm text-gray-500">{patient.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{patient.primaryCancerSite}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(patient.currentStatus)}`}>
-                          {patient.currentStatus}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRiskBadgeColor(patient.riskLevel)}`}>
-                          {patient.riskLevel}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{patient.assignedDoctorName}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end space-x-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="p-1 text-blue-600 hover:text-blue-700"
-                            onClick={() => handleViewPatient(patient)}
-                            title="View Patient"
-                          >
-                            <EyeIcon className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="p-1 text-green-600 hover:text-green-700"
-                            onClick={() => handleEditPatient(patient)}
-                            title="Edit Patient"
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="p-1 text-red-600 hover:text-red-700"
-                            onClick={() => handleDeletePatient(patient)}
-                            title="Delete Patient"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
+            <>
+              {/* Desktop Table View - Hidden on mobile */}
+              <div className="hidden lg:block h-full overflow-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Patient
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Contact
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Cancer Site
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Risk Level
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Assigned Doctor
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredPatients.map((patient) => (
+                      <tr key={patient.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {patient.firstName} {patient.lastName}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              ID: {patient.patientId} • Age: {patient.age} • {patient.gender}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{patient.mobileNumber}</div>
+                          <div className="text-sm text-gray-500">{patient.email}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{patient.primaryCancerSite}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(patient.currentStatus)}`}>
+                            {patient.currentStatus}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRiskBadgeColor(patient.riskLevel)}`}>
+                            {patient.riskLevel}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{patient.assignedDoctorName}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center justify-end space-x-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="p-1 text-blue-600 hover:text-blue-700"
+                              onClick={() => handleViewPatient(patient)}
+                              title="View Patient"
+                            >
+                              <EyeIcon className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="p-1 text-green-600 hover:text-green-700"
+                              onClick={() => handleEditPatient(patient)}
+                              title="Edit Patient"
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="p-1 text-red-600 hover:text-red-700"
+                              onClick={() => handleDeletePatient(patient)}
+                              title="Delete Patient"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View - Visible on mobile only */}
+              <div className="lg:hidden relative">
+                <div 
+                  className="overflow-y-auto px-2 py-4"
+                  style={{
+                    maxHeight: '60vh',
+                    WebkitOverflowScrolling: 'touch',
+                    overscrollBehavior: 'contain'
+                  }}
+                >
+                  {/* Scroll hint text */}
+                  {filteredPatients.length > 3 && (
+                    <div className="text-center text-xs text-gray-500 mb-2 sticky top-0 bg-white/80 backdrop-blur-sm py-1 rounded-lg">
+                      👆 Scroll to see all patients 👆
+                    </div>
+                  )}
+                  <div className="space-y-4 pb-8">
+                  {filteredPatients.map((patient) => (
+                  <div key={patient.id} className="bg-white/95 backdrop-blur-sm rounded-xl shadow-md border border-gray-200 p-4">
+                    {/* Patient Header */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 text-lg">
+                          {patient.firstName} {patient.lastName}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          ID: {patient.patientId} • Age: {patient.age} • {patient.gender}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-1 ml-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg"
+                          onClick={() => handleViewPatient(patient)}
+                          title="View Patient"
+                        >
+                          <EyeIcon className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg"
+                          onClick={() => handleEditPatient(patient)}
+                          title="Edit Patient"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg"
+                          onClick={() => handleDeletePatient(patient)}
+                          title="Delete Patient"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Patient Details Grid */}
+                    <div className="grid grid-cols-1 gap-3">
+                      {/* Contact Info */}
+                      <div className="bg-blue-50 rounded-lg p-3">
+                        <div className="text-xs font-medium text-blue-700 uppercase tracking-wide mb-1">Contact</div>
+                        <div className="text-sm font-medium text-gray-900">{patient.mobileNumber}</div>
+                        {patient.email && (
+                          <div className="text-xs text-gray-600">{patient.email}</div>
+                        )}
+                      </div>
+
+                      {/* Medical Info */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-purple-50 rounded-lg p-3">
+                          <div className="text-xs font-medium text-purple-700 uppercase tracking-wide mb-1">Cancer Site</div>
+                          <div className="text-sm font-medium text-gray-900">{patient.primaryCancerSite}</div>
+                        </div>
+                        <div className="bg-green-50 rounded-lg p-3">
+                          <div className="text-xs font-medium text-green-700 uppercase tracking-wide mb-1">Doctor</div>
+                          <div className="text-sm font-medium text-gray-900 truncate">{patient.assignedDoctorName || 'Not assigned'}</div>
+                        </div>
+                      </div>
+
+                      {/* Status & Risk */}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Status</div>
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(patient.currentStatus)}`}>
+                            {patient.currentStatus}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Risk Level</div>
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRiskBadgeColor(patient.riskLevel)}`}>
+                            {patient.riskLevel}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>
 
       {/* Add Patient Modal */}
       <Modal open={isModalOpen} onOpenChange={setModalOpen} title="Add New Patient" size="lg">
-        <form onSubmit={handleAddPatientSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input 
-              label="Patient ID" 
-              placeholder="Auto-generated" 
-              value={newPatientForm.patientId}
-              onChange={(e) => handleNewPatientInputChange('patientId', e.target.value)}
-              disabled
-            />
-            <div></div>
-            <Input 
-              label="First Name" 
-              placeholder="John" 
-              value={newPatientForm.firstName}
-              onChange={(e) => handleNewPatientInputChange('firstName', e.target.value)}
-              required 
-            />
-            <Input 
-              label="Last Name" 
-              placeholder="Doe" 
-              value={newPatientForm.lastName}
-              onChange={(e) => handleNewPatientInputChange('lastName', e.target.value)}
-              required 
-            />
-            <Input 
-              type="date" 
-              label="Date of Birth" 
-              value={newPatientForm.dateOfBirth}
-              onChange={(e) => handleNewPatientInputChange('dateOfBirth', e.target.value)}
-              required 
-            />
-            <Select
-              label="Gender"
-              placeholder="Select Gender"
-              value={newPatientForm.gender}
-              onChange={(e) => handleNewPatientInputChange('gender', e.target.value)}
-              options={[
-                { label: 'Male', value: 'Male' },
-                { label: 'Female', value: 'Female' },
-                { label: 'Other', value: 'Other' }
-              ]}
-              required
-            />
-            <Input 
-              label="Mobile Number" 
-              placeholder="+91 9876543210" 
-              value={newPatientForm.mobileNumber}
-              onChange={(e) => handleNewPatientInputChange('mobileNumber', e.target.value)}
-              required 
-            />
-            <Input 
-              type="email" 
-              label="Email" 
-              placeholder="patient@email.com" 
-              value={newPatientForm.email}
-              onChange={(e) => handleNewPatientInputChange('email', e.target.value)}
-            />
-            <Input 
-              label="Address" 
-              placeholder="123 Main Street" 
-              value={newPatientForm.address}
-              onChange={(e) => handleNewPatientInputChange('address', e.target.value)}
-            />
-            <Input 
-              label="City" 
-              placeholder="Mumbai" 
-              value={newPatientForm.city}
-              onChange={(e) => handleNewPatientInputChange('city', e.target.value)}
-            />
-            <Input 
-              label="State" 
-              placeholder="Maharashtra" 
-              value={newPatientForm.state}
-              onChange={(e) => handleNewPatientInputChange('state', e.target.value)}
-            />
-            <Input 
-              label="Postal Code" 
-              placeholder="400001" 
-              value={newPatientForm.postalCode}
-              onChange={(e) => handleNewPatientInputChange('postalCode', e.target.value)}
-            />
-            <Select
-              label="Primary Cancer Site"
-              placeholder="Select Cancer Site"
-              value={newPatientForm.primaryCancerSite}
-              onChange={(e) => handleNewPatientInputChange('primaryCancerSite', e.target.value)}
-              options={[
-                { label: 'Lung', value: 'Lung' },
-                { label: 'Breast', value: 'Breast' },
-                { label: 'Prostate', value: 'Prostate' },
-                { label: 'Colorectal', value: 'Colorectal' },
-                { label: 'Other', value: 'Other' }
-              ]}
-            />
-            <Select
-              label="Risk Level"
-              placeholder="Select Risk Level"
-              value={newPatientForm.riskLevel}
-              onChange={(e) => handleNewPatientInputChange('riskLevel', e.target.value)}
-              options={[
-                { label: 'Low', value: 'Low' },
-                { label: 'Medium', value: 'Medium' },
-                { label: 'High', value: 'High' },
-                { label: 'Critical', value: 'Critical' }
-              ]}
-            />
+        <form onSubmit={handleAddPatientSubmit} className="space-y-4">
+          {/* Personal Information Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Personal Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input 
+                label="First Name" 
+                placeholder="John" 
+                value={newPatientForm.firstName}
+                onChange={(e) => handleNewPatientInputChange('firstName', e.target.value)}
+                required 
+              />
+              <Input 
+                label="Last Name" 
+                placeholder="Doe" 
+                value={newPatientForm.lastName}
+                onChange={(e) => handleNewPatientInputChange('lastName', e.target.value)}
+                required 
+              />
+              <Input 
+                type="date" 
+                label="Date of Birth" 
+                value={newPatientForm.dateOfBirth}
+                onChange={(e) => handleNewPatientInputChange('dateOfBirth', e.target.value)}
+                required 
+              />
+              <Select
+                label="Gender"
+                placeholder="Select Gender"
+                value={newPatientForm.gender}
+                onChange={(e) => handleNewPatientInputChange('gender', e.target.value)}
+                options={[
+                  { label: 'Male', value: 'Male' },
+                  { label: 'Female', value: 'Female' },
+                  { label: 'Other', value: 'Other' }
+                ]}
+                required
+              />
+            </div>
           </div>
-          <div className="flex justify-end space-x-3 pt-6 border-t">
+
+          {/* Contact Information Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Contact Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input 
+                label="Mobile Number" 
+                placeholder="+91 9876543210" 
+                value={newPatientForm.mobileNumber}
+                onChange={(e) => handleNewPatientInputChange('mobileNumber', e.target.value)}
+                required 
+              />
+              <Input 
+                type="email" 
+                label="Email" 
+                placeholder="patient@email.com" 
+                value={newPatientForm.email}
+                onChange={(e) => handleNewPatientInputChange('email', e.target.value)}
+              />
+              <Input 
+                label="Address" 
+                placeholder="123 Main Street" 
+                value={newPatientForm.address}
+                onChange={(e) => handleNewPatientInputChange('address', e.target.value)}
+                className="sm:col-span-2"
+              />
+              <Input 
+                label="City" 
+                placeholder="Mumbai" 
+                value={newPatientForm.city}
+                onChange={(e) => handleNewPatientInputChange('city', e.target.value)}
+              />
+              <Input 
+                label="State" 
+                placeholder="Maharashtra" 
+                value={newPatientForm.state}
+                onChange={(e) => handleNewPatientInputChange('state', e.target.value)}
+              />
+              <Input 
+                label="Postal Code" 
+                placeholder="400001" 
+                value={newPatientForm.postalCode}
+                onChange={(e) => handleNewPatientInputChange('postalCode', e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Medical Information Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Medical Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Select
+                label="Primary Cancer Site"
+                placeholder="Select Cancer Site"
+                value={newPatientForm.primaryCancerSite}
+                onChange={(e) => handleNewPatientInputChange('primaryCancerSite', e.target.value)}
+                options={[
+                  { label: 'Lung', value: 'Lung' },
+                  { label: 'Breast', value: 'Breast' },
+                  { label: 'Prostate', value: 'Prostate' },
+                  { label: 'Colorectal', value: 'Colorectal' },
+                  { label: 'Other', value: 'Other' }
+                ]}
+              />
+              <Select
+                label="Risk Level"
+                placeholder="Select Risk Level"
+                value={newPatientForm.riskLevel}
+                onChange={(e) => handleNewPatientInputChange('riskLevel', e.target.value)}
+                options={[
+                  { label: 'Low', value: 'Low' },
+                  { label: 'Medium', value: 'Medium' },
+                  { label: 'High', value: 'High' },
+                  { label: 'Critical', value: 'Critical' }
+                ]}
+              />
+            </div>
+          </div>
+
+          {/* Form Actions - Sticky Footer */}
+          <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm flex justify-end space-x-3 pt-6 border-t mt-8">
             <Button 
               variant="outline" 
               type="button"
               onClick={handleCloseModal}
               disabled={isSubmitting}
+              className="px-6 py-2"
             >
               Cancel
             </Button>
@@ -675,6 +798,7 @@ export default function ManagePatientsPage() {
               type="submit" 
               variant="primary" 
               disabled={isSubmitting}
+              className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
             >
               {isSubmitting ? 'Creating...' : 'Add Patient'}
             </Button>

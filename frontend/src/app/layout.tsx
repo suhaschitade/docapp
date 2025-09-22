@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import PWAInstallBanner, { PWAUpdateBanner } from "@/components/PWAInstallBanner";
@@ -21,8 +21,6 @@ export const metadata: Metadata = {
     email: false,
     address: false,
   },
-  themeColor: "#2563eb",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
   icons: {
     icon: [
       { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
@@ -35,6 +33,14 @@ export const metadata: Metadata = {
     ],
     shortcut: '/favicon.ico',
   },
+};
+
+export const viewport = {
+  themeColor: '#2563eb',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({

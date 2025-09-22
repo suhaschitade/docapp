@@ -21,7 +21,7 @@ export function Modal({
 }: ModalProps) {
   const sizeClasses = {
     sm: 'max-w-md',
-    md: 'max-w-lg',
+    md: 'max-w-lg', 
     lg: 'max-w-2xl',
     xl: 'max-w-4xl'
   }
@@ -33,12 +33,13 @@ export function Modal({
         <Dialog.Content
           className={cn(
             'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2',
-            'w-[95vw] rounded-2xl bg-white/95 backdrop-blur-xl p-8 shadow-2xl border border-gray-200/50',
+            'w-[95vw] max-h-[90vh] flex flex-col rounded-2xl bg-white/95 backdrop-blur-xl shadow-2xl border border-gray-200/50',
             'animate-in fade-in-0 zoom-in-95 slide-in-from-left-1/2 slide-in-from-top-[48%]',
             sizeClasses[size]
           )}
         >
-          <div className="flex items-center justify-between mb-6">
+          {/* Fixed Header */}
+          <div className="flex items-center justify-between p-8 pb-4 flex-shrink-0">
             <div>
               {title && (
                 <Dialog.Title className="text-2xl font-bold text-gray-800 tracking-tight">
@@ -56,7 +57,11 @@ export function Modal({
               <span className="sr-only">Close</span>
             </Dialog.Close>
           </div>
-          {children}
+          
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto px-8 pb-8">
+            {children}
+          </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

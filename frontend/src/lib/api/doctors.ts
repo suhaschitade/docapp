@@ -1,6 +1,7 @@
 import { authService } from '../auth';
+import { getApiBaseUrl } from '../api-config';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5145';
+const API_BASE_URL = getApiBaseUrl();
 
 export interface Doctor {
   id: string;
@@ -45,7 +46,7 @@ class DoctorService {
   async getDoctors(): Promise<Doctor[]> {
     console.log('👨‍⚕️ Fetching all doctors');
     
-    const url = `${API_BASE_URL}/api/doctors`;
+    const url = `${API_BASE_URL}/doctors`;
     console.log('🌐 GET request to:', url);
     console.log('🔑 Headers:', this.getAuthHeaders());
 
@@ -61,7 +62,7 @@ class DoctorService {
     console.log('👨‍⚕️ Fetching doctor with ID:', id);
 
     const response = await fetch(
-      `${API_BASE_URL}/api/doctors/${id}`,
+      `${API_BASE_URL}/doctors/${id}`,
       {
         headers: this.getAuthHeaders(),
       }

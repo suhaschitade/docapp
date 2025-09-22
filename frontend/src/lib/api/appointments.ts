@@ -1,6 +1,7 @@
 import { authService } from '../auth';
+import { getApiBaseUrl } from '../api-config';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5145';
+const API_BASE_URL = getApiBaseUrl();
 
 interface ApiResponse<T> {
   data: T;
@@ -101,7 +102,7 @@ class AppointmentService {
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString());
 
-    const url = `${API_BASE_URL}/api/appointments?${queryParams}`;
+    const url = `${API_BASE_URL}/appointments?${queryParams}`;
     console.log('🌐 GET request to:', url);
     console.log('🔑 Headers:', this.getAuthHeaders());
 
@@ -126,7 +127,7 @@ class AppointmentService {
     if (params?.startDate) queryParams.append('startDate', params.startDate);
     if (params?.endDate) queryParams.append('endDate', params.endDate);
 
-    const url = `${API_BASE_URL}/api/appointments/calendar?${queryParams}`;
+    const url = `${API_BASE_URL}/appointments/calendar?${queryParams}`;
     console.log('🌐 GET request to:', url);
 
     const response = await fetch(url, {
@@ -139,7 +140,7 @@ class AppointmentService {
   // Get single appointment
   async getAppointment(id: number): Promise<Appointment> {
     const response = await fetch(
-      `${API_BASE_URL}/api/appointments/${id}`,
+      `${API_BASE_URL}/appointments/${id}`,
       {
         headers: this.getAuthHeaders(),
       }
@@ -160,10 +161,10 @@ class AppointmentService {
     
     console.log('📤 Request body:', requestBody);
     console.log('🔑 Headers:', this.getAuthHeaders());
-    console.log('🌐 POST request to:', `${API_BASE_URL}/api/appointments/by-name`);
+    console.log('🌐 POST request to:', `${API_BASE_URL}/appointments/by-name`);
 
     const response = await fetch(
-      `${API_BASE_URL}/api/appointments/by-name`,
+      `${API_BASE_URL}/appointments/by-name`,
       {
         method: 'POST',
         headers: this.getAuthHeaders(),
@@ -177,7 +178,7 @@ class AppointmentService {
   // Update appointment
   async updateAppointment(id: number, appointmentData: Partial<Appointment>): Promise<void> {
     const response = await fetch(
-      `${API_BASE_URL}/api/appointments/${id}`,
+      `${API_BASE_URL}/appointments/${id}`,
       {
         method: 'PUT',
         headers: this.getAuthHeaders(),
@@ -191,7 +192,7 @@ class AppointmentService {
   // Delete appointment
   async deleteAppointment(id: number): Promise<void> {
     const response = await fetch(
-      `${API_BASE_URL}/api/appointments/${id}`,
+      `${API_BASE_URL}/appointments/${id}`,
       {
         method: 'DELETE',
         headers: this.getAuthHeaders(),
@@ -214,7 +215,7 @@ class AppointmentService {
     if (params?.endDate) queryParams.append('endDate', params.endDate);
 
     const response = await fetch(
-      `${API_BASE_URL}/api/appointments/statistics?${queryParams}`,
+      `${API_BASE_URL}/appointments/statistics?${queryParams}`,
       {
         headers: this.getAuthHeaders(),
       }

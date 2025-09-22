@@ -83,3 +83,42 @@ body {
   z-index: 999999 !important;
   position: absolute !important;
 }
+
+/* Mobile scrolling improvements */
+@media (max-width: 1024px) {
+  /* Enable smooth scrolling on mobile */
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Fix viewport height issues on mobile */
+  .mobile-viewport {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+  
+  /* Ensure touch scrolling works properly */
+  .mobile-scroll {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  /* Force proper height on mobile containers */
+  .mobile-full-height {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+  }
+  
+  .mobile-scrollable-content {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    /* Add momentum scrolling for iOS */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+}

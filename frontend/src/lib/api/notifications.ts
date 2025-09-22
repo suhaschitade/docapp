@@ -1,6 +1,7 @@
 import { authService } from '../auth';
+import { getApiBaseUrl } from '../api-config';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5145';
+const API_BASE_URL = getApiBaseUrl();
 
 interface ApiResponse<T> {
   data: T;
@@ -86,7 +87,7 @@ class NotificationService {
     if (params?.isRead !== undefined) queryParams.append('isRead', params.isRead.toString());
     if (params?.notificationType) queryParams.append('notificationType', params.notificationType);
 
-    const url = `${API_BASE_URL}/api/notifications?${queryParams}`;
+    const url = `${API_BASE_URL}/notifications?${queryParams}`;
     console.log('🌐 GET request to:', url);
 
     const response = await fetch(url, {
@@ -101,7 +102,7 @@ class NotificationService {
     console.log('🔍 Getting notification:', id);
 
     const response = await fetch(
-      `${API_BASE_URL}/api/notifications/${id}`,
+      `${API_BASE_URL}/notifications/${id}`,
       {
         headers: this.getAuthHeaders(),
       }
@@ -115,7 +116,7 @@ class NotificationService {
     console.log('✅ Marking notification as read:', id);
 
     const response = await fetch(
-      `${API_BASE_URL}/api/notifications/${id}/read`,
+      `${API_BASE_URL}/notifications/${id}/read`,
       {
         method: 'PUT',
         headers: this.getAuthHeaders(),
@@ -130,7 +131,7 @@ class NotificationService {
     console.log('✅ Marking all notifications as read');
 
     const response = await fetch(
-      `${API_BASE_URL}/api/notifications/mark-all-read`,
+      `${API_BASE_URL}/notifications/mark-all-read`,
       {
         method: 'PUT',
         headers: this.getAuthHeaders(),
@@ -143,7 +144,7 @@ class NotificationService {
   // Get unread count
   async getUnreadCount(): Promise<{ unreadCount: number }> {
     const response = await fetch(
-      `${API_BASE_URL}/api/notifications/unread-count`,
+      `${API_BASE_URL}/notifications/unread-count`,
       {
         headers: this.getAuthHeaders(),
       }
@@ -157,7 +158,7 @@ class NotificationService {
     console.log('➕ Creating notification with data:', notificationData);
 
     const response = await fetch(
-      `${API_BASE_URL}/api/notifications`,
+      `${API_BASE_URL}/notifications`,
       {
         method: 'POST',
         headers: this.getAuthHeaders(),
@@ -173,7 +174,7 @@ class NotificationService {
     console.log('🗑️ Deleting notification:', id);
 
     const response = await fetch(
-      `${API_BASE_URL}/api/notifications/${id}`,
+      `${API_BASE_URL}/notifications/${id}`,
       {
         method: 'DELETE',
         headers: this.getAuthHeaders(),
@@ -186,7 +187,7 @@ class NotificationService {
   // Get notification types
   async getNotificationTypes(): Promise<NotificationType[]> {
     const response = await fetch(
-      `${API_BASE_URL}/api/notifications/types`,
+      `${API_BASE_URL}/notifications/types`,
       {
         headers: this.getAuthHeaders(),
       }

@@ -1,6 +1,7 @@
 import { authService } from '../auth';
+import { getApiBaseUrl } from '../api-config';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5145';
+const API_BASE_URL = getApiBaseUrl();
 
 interface ApiResponse<T> {
   data: T;
@@ -104,7 +105,7 @@ class InvestigationService {
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.pageSize) queryParams.append('pageSize', params.pageSize.toString());
 
-    const url = `${API_BASE_URL}/api/investigations?${queryParams}`;
+    const url = `${API_BASE_URL}/investigations?${queryParams}`;
     console.log('🌐 GET request to:', url);
     console.log('🔑 Headers:', this.getAuthHeaders());
 
@@ -120,7 +121,7 @@ class InvestigationService {
     console.log('🔍 Getting investigation with id:', id);
 
     const response = await fetch(
-      `${API_BASE_URL}/api/investigations/${id}`,
+      `${API_BASE_URL}/investigations/${id}`,
       {
         headers: this.getAuthHeaders(),
       }
@@ -134,7 +135,7 @@ class InvestigationService {
     console.log('🔍 Getting investigations for patient:', patientId);
 
     const response = await fetch(
-      `${API_BASE_URL}/api/investigations/patient/${patientId}`,
+      `${API_BASE_URL}/investigations/patient/${patientId}`,
       {
         headers: this.getAuthHeaders(),
       }
@@ -148,7 +149,7 @@ class InvestigationService {
     console.log('➕ Creating investigation with data:', investigationData);
     
     const response = await fetch(
-      `${API_BASE_URL}/api/investigations`,
+      `${API_BASE_URL}/investigations`,
       {
         method: 'POST',
         headers: this.getAuthHeaders(),
@@ -164,7 +165,7 @@ class InvestigationService {
     console.log('📝 Updating investigation with id:', id, 'data:', investigationData);
     
     const response = await fetch(
-      `${API_BASE_URL}/api/investigations/${id}`,
+      `${API_BASE_URL}/investigations/${id}`,
       {
         method: 'PUT',
         headers: this.getAuthHeaders(),
@@ -180,7 +181,7 @@ class InvestigationService {
     console.log('🗑️ Deleting investigation with id:', id);
     
     const response = await fetch(
-      `${API_BASE_URL}/api/investigations/${id}`,
+      `${API_BASE_URL}/investigations/${id}`,
       {
         method: 'DELETE',
         headers: this.getAuthHeaders(),
@@ -195,7 +196,7 @@ class InvestigationService {
     console.log('📊 Getting investigation statistics');
 
     const response = await fetch(
-      `${API_BASE_URL}/api/investigations/statistics`,
+      `${API_BASE_URL}/investigations/statistics`,
       {
         headers: this.getAuthHeaders(),
       }
