@@ -15,7 +15,7 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -194,7 +194,7 @@ export default function LoginPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full px-4 py-4 bg-white/80 border border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 backdrop-blur-sm text-gray-900 placeholder-gray-500"
-                      placeholder="admin@clinic.com"
+                      placeholder="Enter your email"
                       required
                     />
                   </div>
@@ -210,7 +210,7 @@ export default function LoginPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full px-4 py-4 bg-white/80 border border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 backdrop-blur-sm pr-12 text-gray-900 placeholder-gray-500"
-                      placeholder="Admin@123"
+                      placeholder="Enter your password"
                       required
                     />
                     <button
@@ -269,13 +269,7 @@ export default function LoginPage() {
                   </a>
                 </p>
               </div>
-              
-              {/* Demo Credentials */}
-              <div className="mt-6 p-4 bg-blue-50 rounded-2xl border border-blue-200" suppressHydrationWarning>
-                <p className="text-sm font-medium text-blue-800 mb-2">Demo Credentials:</p>
-                <p className="text-xs text-blue-600">Email: admin@clinic.com</p>
-                <p className="text-xs text-blue-600">Password: Admin@123</p>
-              </div>
+
             </motion.div>
           </div>
         </motion.div>
