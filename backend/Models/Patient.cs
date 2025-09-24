@@ -19,7 +19,7 @@ public class Patient
     public string LastName { get; set; } = string.Empty;
     
     [Required]
-    public DateTime DateOfBirth { get; set; }
+    public int Age { get; set; }
     
     [Required]
     public Gender Gender { get; set; }
@@ -73,11 +73,36 @@ public class Patient
     // Tracking
     public string? AssignedDoctorId { get; set; }
     
-    public DateTime RegistrationDate { get; set; } = DateTime.Today;
+    public DateTime RegistrationDate { get; set; } = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc);
     
     public DateTime? LastVisitDate { get; set; }
     
     public DateTime? NextFollowupDate { get; set; }
+    
+    // Excel import related fields
+    [MaxLength(500)]
+    public string? SiteSpecificDiagnosis { get; set; }
+    
+    
+    public int? RegistrationYear { get; set; }
+    
+    [MaxLength(20)]
+    public string? SecondaryContactPhone { get; set; }
+    
+    [MaxLength(20)]
+    public string? TertiaryContactPhone { get; set; }
+    
+    public DateTime? DateLoggedIn { get; set; }
+    
+    [MaxLength(100)]
+    public string? ExcelSheetSource { get; set; }
+    
+    public int? ExcelRowNumber { get; set; }
+    
+    [MaxLength(50)]
+    public string? OriginalMRN { get; set; }
+    
+    public bool ImportedFromExcel { get; set; } = false;
     
     // Metadata
     public string? CreatedBy { get; set; }

@@ -94,7 +94,7 @@ builder.Services.AddCors(options =>
                 "http://localhost:3000",      // Local development
                 "https://localhost:3000",     // Local development with HTTPS
                 "http://127.0.0.1:3000",      // Alternative localhost
-                "http://192.168.1.10:3000"    // Network access - allows access from network IP
+                "http://192.168.0.169:3000"   // Network access - allows access from network IP
               )
               .AllowAnyMethod()
               .AllowAnyHeader()
@@ -108,9 +108,9 @@ builder.Services.AddSignalR();
 // AutoMapper
 builder.Services.AddAutoMapper(typeof(Program));
 
-// Notification Services
-builder.Services.AddScoped<PatientManagementApi.Services.INotificationService, PatientManagementApi.Services.NotificationService>();
-builder.Services.AddHostedService<PatientManagementApi.BackgroundServices.NotificationBackgroundService>();
+// Notification Services - DISABLED
+// builder.Services.AddScoped<PatientManagementApi.Services.INotificationService, PatientManagementApi.Services.NotificationService>();
+// builder.Services.AddHostedService<PatientManagementApi.BackgroundServices.NotificationBackgroundService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

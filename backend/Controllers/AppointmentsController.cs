@@ -65,9 +65,19 @@ public class AppointmentsController : ControllerBase
                 query = query.Where(a => a.PatientId == patientId.Value);
             }
 
-            if (!string.IsNullOrEmpty(status) && Enum.TryParse<AppointmentStatusType>(status, true, out var statusEnum))
+            if (!string.IsNullOrEmpty(status))
             {
-                query = query.Where(a => a.Status == statusEnum);
+                // Support comma-separated statuses
+                var statusList = status.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => s.Trim())
+                    .Where(s => Enum.TryParse<AppointmentStatusType>(s, true, out _))
+                    .Select(s => Enum.Parse<AppointmentStatusType>(s, true))
+                    .ToList();
+                    
+                if (statusList.Any())
+                {
+                    query = query.Where(a => statusList.Contains(a.Status));
+                }
             }
 
             // Get total count for pagination
@@ -364,7 +374,7 @@ var end = endDate?.ToUniversalTime() ?? DateTime.UtcNow.AddDays(30);
                     FirstName = firstName,
                     LastName = lastName,
                     MobileNumber = createAppointmentDto.Phone,
-                    DateOfBirth = DateTime.UtcNow.AddYears(-30), // Default age
+                    Age = 30, // Default age
                     Gender = Gender.Other,
                     PrimaryCancerSite = CancerSiteType.Other,
                     TreatmentPathway = TreatmentPathwayType.Curative,

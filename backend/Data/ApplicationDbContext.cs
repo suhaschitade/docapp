@@ -202,11 +202,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     private void UpdateTimestamps()
     {
-        var entries = ChangeTracker.Entries()
+        var modifiedEntries = ChangeTracker.Entries()
             .Where(e => e.State == EntityState.Modified)
             .Where(e => e.Entity.GetType().GetProperty("UpdatedAt") != null);
 
-        foreach (var entry in entries)
+        foreach (var entry in modifiedEntries)
         {
             entry.Property("UpdatedAt").CurrentValue = DateTime.UtcNow;
         }

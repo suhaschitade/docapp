@@ -15,12 +15,13 @@ export interface Appointment {
   id: number;
   patientId: number;
   patientName: string;
+  phone?: string;
   doctorId?: string;
   doctorName?: string;
   appointmentDate: string;
   appointmentTime: string;
   appointmentType: string;
-  status: 'scheduled' | 'completed' | 'missed' | 'cancelled' | 'pending' | 'confirmed';
+  status: 'scheduled' | 'completed' | 'missed' | 'cancelled' | 'pending' | 'confirmed' | 'rescheduled';
   notes?: string;
   consultationNotes?: string;
   nextAppointmentDate?: string;
@@ -78,6 +79,21 @@ class AppointmentService {
     const data = await response.json();
     console.log('✅ API Success: Data received', data);
     return data;
+  }
+
+  // Get today's appointments specifically
+  async getTodaysAppointments(doctorId?: string): Promise<ApiResponse<Appointment[]>> {
+    const today = new Date().toISOString().split('T')[0];
+    
+    console.log('📅 Fetching today\'s appointments for date:', today);
+    
+    return this.getAppointments({
+      startDate: today,
+      endDate: today,
+      doctorId: doctorId,
+      // Remove status filter to get ALL appointments for today (including completed and rescheduled)
+      pageSize: 100 // Get all appointments for today
+    });
   }
 
   // Get appointments with filters

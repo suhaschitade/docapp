@@ -11,35 +11,97 @@ interface ApiResponse<T> {
   totalPages?: number;
 }
 
+// Enums to match backend exactly
+export enum Gender {
+  Male = 'M',
+  Female = 'F',
+  Other = 'O'
+}
+
+export enum CancerSiteType {
+  Lung = 'Lung',
+  Breast = 'Breast',
+  Kidney = 'Kidney',
+  Colon = 'Colon',
+  Prostate = 'Prostate',
+  Cervical = 'Cervical',
+  Ovarian = 'Ovarian',
+  Liver = 'Liver',
+  Stomach = 'Stomach',
+  Pancreatic = 'Pancreatic',
+  Brain = 'Brain',
+  Blood = 'Blood',
+  Other = 'Other'
+}
+
+export enum TreatmentPathwayType {
+  Curative = 'Curative',
+  Palliative = 'Palliative'
+}
+
+export enum PatientStatusType {
+  Active = 'Active',
+  Completed = 'Completed',
+  Defaulter = 'Defaulter',
+  LostToFollowup = 'LostToFollowup',
+  Deceased = 'Deceased'
+}
+
+export enum RiskLevelType {
+  Low = 'Low',
+  Medium = 'Medium',
+  High = 'High',
+  Critical = 'Critical'
+}
+
 export interface Patient {
   id: number;
   patientId: string;
   firstName: string;
   lastName: string;
-  dateOfBirth: string;
   age: number;
-  gender: string;
+  gender: Gender | string;
   mobileNumber: string;
   email?: string;
   address?: string;
   city?: string;
   state?: string;
   postalCode?: string;
-  country?: string;
+  country: string;
   emergencyContactName?: string;
   emergencyContactPhone?: string;
-  primaryCancerSite: string;
+  
+  // Cancer specific information
+  primaryCancerSite: CancerSiteType | string;
   cancerStage?: string;
   histology?: string;
   diagnosisDate?: string;
-  treatmentPathway: string;
-  currentStatus: string;
-  riskLevel: string;
+  treatmentPathway: TreatmentPathwayType | string;
+  
+  // Status and risk
+  currentStatus: PatientStatusType | string;
+  riskLevel: RiskLevelType | string;
+  
+  // Tracking
   assignedDoctorId?: string;
   assignedDoctorName?: string;
   registrationDate: string;
   lastVisitDate?: string;
   nextFollowupDate?: string;
+  
+  // Excel import related fields
+  siteSpecificDiagnosis?: string;
+  registrationYear?: number;
+  secondaryContactPhone?: string;
+  tertiaryContactPhone?: string;
+  dateLoggedIn?: string;
+  excelSheetSource?: string;
+  excelRowNumber?: number;
+  originalMRN?: string;
+  importedFromExcel: boolean;
+  
+  // Metadata
+  createdBy?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -148,7 +210,27 @@ class PatientService {
     phone: string;
     email?: string;
     gender?: string;
-    dateOfBirth?: string;
+    age?: number;
+    address?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+    emergencyContactName?: string;
+    emergencyContactPhone?: string;
+    primaryCancerSite?: string;
+    cancerStage?: string;
+    histology?: string;
+    diagnosisDate?: string;
+    treatmentPathway?: string;
+    riskLevel?: string;
+    assignedDoctorId?: string;
+    nextFollowupDate?: string;
+    siteSpecificDiagnosis?: string;
+    registrationYear?: number;
+    secondaryContactPhone?: string;
+    tertiaryContactPhone?: string;
+    originalMRN?: string;
   }): Promise<Patient> {
     console.log('➕ Creating patient with data:', patientData);
     console.log('🌐 API_BASE_URL being used:', API_BASE_URL);
@@ -162,29 +244,40 @@ class PatientService {
     // Generate a unique patient ID
     const patientId = `P${Date.now().toString().slice(-6)}`;
     
+    // Use provided age or default
+    const patientAge = patientData.age || 30; // Default age if not provided
+    
     const requestBody = {
       patientId,
       firstName,
       lastName,
-      dateOfBirth: patientData.dateOfBirth || new Date(Date.now() - 30 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default to 30 years ago
-      gender: patientData.gender || 'Other',
+      age: patientAge,
+      gender: patientData.gender || Gender.Other,
       mobileNumber: patientData.phone,
       email: patientData.email || '',
-      address: '',
-      city: '',
-      state: '',
-      postalCode: '',
-      country: 'India',
-      emergencyContactName: '',
-      emergencyContactPhone: '',
-      primaryCancerSite: 'Other',
-      cancerStage: '',
-      histology: '',
-      diagnosisDate: null,
-      treatmentPathway: 'Curative',
-      riskLevel: 'Medium',
-      assignedDoctorId: null,
-      nextFollowupDate: null
+      address: patientData.address || '',
+      city: patientData.city || '',
+      state: patientData.state || '',
+      postalCode: patientData.postalCode || '',
+      country: patientData.country || 'India',
+      emergencyContactName: patientData.emergencyContactName || '',
+      emergencyContactPhone: patientData.emergencyContactPhone || '',
+      primaryCancerSite: patientData.primaryCancerSite || CancerSiteType.Other,
+      cancerStage: patientData.cancerStage || '',
+      histology: patientData.histology || '',
+      diagnosisDate: patientData.diagnosisDate || null,
+      treatmentPathway: patientData.treatmentPathway || TreatmentPathwayType.Curative,
+      currentStatus: PatientStatusType.Active,
+      riskLevel: patientData.riskLevel || RiskLevelType.Medium,
+      assignedDoctorId: patientData.assignedDoctorId || null,
+      nextFollowupDate: patientData.nextFollowupDate || null,
+      // Additional fields
+      siteSpecificDiagnosis: patientData.siteSpecificDiagnosis || '',
+      registrationYear: patientData.registrationYear || new Date().getFullYear(),
+      secondaryContactPhone: patientData.secondaryContactPhone || '',
+      tertiaryContactPhone: patientData.tertiaryContactPhone || '',
+      originalMRN: patientData.originalMRN || '',
+      importedFromExcel: false
     };
     
     console.log('📤 Request body:', requestBody);
@@ -208,7 +301,7 @@ class PatientService {
     patientId: string;
     firstName: string;
     lastName: string;
-    dateOfBirth: string;
+    age?: number;
     gender: string;
     mobileNumber: string;
     email?: string;
@@ -228,14 +321,24 @@ class PatientService {
     riskLevel: string;
     assignedDoctorId?: string | null;
     nextFollowupDate?: string | null;
+    // Additional fields
+    siteSpecificDiagnosis?: string;
+    registrationYear?: number;
+    secondaryContactPhone?: string;
+    tertiaryContactPhone?: string;
+    originalMRN?: string;
+    importedFromExcel?: boolean;
   }): Promise<void> {
     console.log('✏️ Updating patient with ID:', id, 'and data:', patientData);
+    
+    // Use provided age or default
+    const patientAge = patientData.age || 30; // Use provided age
     
     const requestBody = {
       patientId: patientData.patientId,
       firstName: patientData.firstName,
       lastName: patientData.lastName,
-      dateOfBirth: patientData.dateOfBirth,
+      age: patientAge,
       gender: patientData.gender,
       mobileNumber: patientData.mobileNumber,
       email: patientData.email || '',
@@ -254,7 +357,14 @@ class PatientService {
       currentStatus: patientData.currentStatus,
       riskLevel: patientData.riskLevel,
       assignedDoctorId: patientData.assignedDoctorId || null,
-      nextFollowupDate: patientData.nextFollowupDate ? patientData.nextFollowupDate : null
+      nextFollowupDate: patientData.nextFollowupDate ? patientData.nextFollowupDate : null,
+      // Additional fields
+      siteSpecificDiagnosis: patientData.siteSpecificDiagnosis || '',
+      registrationYear: patientData.registrationYear || new Date().getFullYear(),
+      secondaryContactPhone: patientData.secondaryContactPhone || '',
+      tertiaryContactPhone: patientData.tertiaryContactPhone || '',
+      originalMRN: patientData.originalMRN || '',
+      importedFromExcel: patientData.importedFromExcel || false
     };
     
     console.log('📤 PUT request body:', requestBody);

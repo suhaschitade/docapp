@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Modal } from '@/components/ui/Modal'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { patientService, Patient } from '@/lib/api/patients'
+import { patientService, Patient, Gender, CancerSiteType, TreatmentPathwayType, RiskLevelType } from '@/lib/api/patients'
 import { doctorService, Doctor } from '@/lib/api/doctors'
 import { authService } from '@/lib/auth'
 import { 
@@ -45,7 +45,7 @@ export default function ManagePatientsPage() {
     patientId: '',
     firstName: '',
     lastName: '',
-    dateOfBirth: '',
+    age: '',
     gender: '',
     mobileNumber: '',
     email: '',
@@ -53,8 +53,19 @@ export default function ManagePatientsPage() {
     city: '',
     state: '',
     postalCode: '',
+    country: 'India',
+    emergencyContactName: '',
+    emergencyContactPhone: '',
     primaryCancerSite: '',
-    riskLevel: '',
+    cancerStage: '',
+    histology: '',
+    diagnosisDate: '',
+    treatmentPathway: 'Curative',
+    riskLevel: 'Medium',
+    siteSpecificDiagnosis: '',
+    secondaryContactPhone: '',
+    tertiaryContactPhone: '',
+    originalMRN: '',
   })
   
   // Load patients from API
@@ -130,7 +141,7 @@ export default function ManagePatientsPage() {
       patientId: '',
       firstName: '',
       lastName: '',
-      dateOfBirth: '',
+      age: '',
       gender: '',
       mobileNumber: '',
       email: '',
@@ -138,8 +149,19 @@ export default function ManagePatientsPage() {
       city: '',
       state: '',
       postalCode: '',
+      country: 'India',
+      emergencyContactName: '',
+      emergencyContactPhone: '',
       primaryCancerSite: '',
-      riskLevel: '',
+      cancerStage: '',
+      histology: '',
+      diagnosisDate: '',
+      treatmentPathway: 'Curative',
+      riskLevel: 'Medium',
+      siteSpecificDiagnosis: '',
+      secondaryContactPhone: '',
+      tertiaryContactPhone: '',
+      originalMRN: '',
     })
   }
 
@@ -189,7 +211,7 @@ export default function ManagePatientsPage() {
         patientId: editFormData.patientId || selectedPatient.patientId,
         firstName: editFormData.firstName || selectedPatient.firstName,
         lastName: editFormData.lastName || selectedPatient.lastName,
-        dateOfBirth: editFormData.dateOfBirth || selectedPatient.dateOfBirth,
+        age: editFormData.age || selectedPatient.age,
         gender: editFormData.gender || selectedPatient.gender,
         mobileNumber: editFormData.mobileNumber || selectedPatient.mobileNumber,
         email: editFormData.email || selectedPatient.email || '',
@@ -208,7 +230,14 @@ export default function ManagePatientsPage() {
         currentStatus: editFormData.currentStatus || selectedPatient.currentStatus,
         riskLevel: editFormData.riskLevel || selectedPatient.riskLevel,
         assignedDoctorId: editFormData.assignedDoctorId || selectedPatient.assignedDoctorId || null,
-        nextFollowupDate: editFormData.nextFollowupDate || selectedPatient.nextFollowupDate || null
+        nextFollowupDate: editFormData.nextFollowupDate || selectedPatient.nextFollowupDate || null,
+        // Additional fields
+        siteSpecificDiagnosis: editFormData.siteSpecificDiagnosis || selectedPatient.siteSpecificDiagnosis || '',
+        registrationYear: editFormData.registrationYear || selectedPatient.registrationYear || new Date().getFullYear(),
+        secondaryContactPhone: editFormData.secondaryContactPhone || selectedPatient.secondaryContactPhone || '',
+        tertiaryContactPhone: editFormData.tertiaryContactPhone || selectedPatient.tertiaryContactPhone || '',
+        originalMRN: editFormData.originalMRN || selectedPatient.originalMRN || '',
+        importedFromExcel: editFormData.importedFromExcel || selectedPatient.importedFromExcel || false
       }
 
       console.log('🔄 Updating patient:', selectedPatient.id, 'with data:', updateData)
@@ -279,7 +308,24 @@ export default function ManagePatientsPage() {
         phone: newPatientForm.mobileNumber,
         email: newPatientForm.email,
         gender: newPatientForm.gender,
-        dateOfBirth: newPatientForm.dateOfBirth,
+        age: newPatientForm.age ? parseInt(newPatientForm.age) : undefined,
+        address: newPatientForm.address,
+        city: newPatientForm.city,
+        state: newPatientForm.state,
+        postalCode: newPatientForm.postalCode,
+        country: newPatientForm.country,
+        emergencyContactName: newPatientForm.emergencyContactName,
+        emergencyContactPhone: newPatientForm.emergencyContactPhone,
+        primaryCancerSite: newPatientForm.primaryCancerSite,
+        cancerStage: newPatientForm.cancerStage,
+        histology: newPatientForm.histology,
+        diagnosisDate: newPatientForm.diagnosisDate,
+        treatmentPathway: newPatientForm.treatmentPathway,
+        riskLevel: newPatientForm.riskLevel,
+        siteSpecificDiagnosis: newPatientForm.siteSpecificDiagnosis,
+        secondaryContactPhone: newPatientForm.secondaryContactPhone,
+        tertiaryContactPhone: newPatientForm.tertiaryContactPhone,
+        originalMRN: newPatientForm.originalMRN,
       })
 
       // Add to local state immediately for better UX
@@ -684,21 +730,23 @@ export default function ManagePatientsPage() {
                 required 
               />
               <Input 
-                type="date" 
-                label="Date of Birth" 
-                value={newPatientForm.dateOfBirth}
-                onChange={(e) => handleNewPatientInputChange('dateOfBirth', e.target.value)}
+                type="number" 
+                label="Age" 
+                placeholder="30" 
+                value={newPatientForm.age}
+                onChange={(e) => handleNewPatientInputChange('age', e.target.value)}
                 required 
               />
+              <div></div> {/* Empty space for grid alignment */}
               <Select
                 label="Gender"
                 placeholder="Select Gender"
                 value={newPatientForm.gender}
                 onChange={(e) => handleNewPatientInputChange('gender', e.target.value)}
                 options={[
-                  { label: 'Male', value: 'Male' },
-                  { label: 'Female', value: 'Female' },
-                  { label: 'Other', value: 'Other' }
+                  { label: 'Male', value: Gender.Male },
+                  { label: 'Female', value: Gender.Female },
+                  { label: 'Other', value: Gender.Other }
                 ]}
                 required
               />
@@ -748,6 +796,43 @@ export default function ManagePatientsPage() {
                 value={newPatientForm.postalCode}
                 onChange={(e) => handleNewPatientInputChange('postalCode', e.target.value)}
               />
+              <Input 
+                label="Country" 
+                placeholder="India" 
+                value={newPatientForm.country}
+                onChange={(e) => handleNewPatientInputChange('country', e.target.value)}
+              />
+              <Input 
+                label="Secondary Contact Phone" 
+                placeholder="+91 9876543211" 
+                value={newPatientForm.secondaryContactPhone}
+                onChange={(e) => handleNewPatientInputChange('secondaryContactPhone', e.target.value)}
+              />
+              <Input 
+                label="Tertiary Contact Phone" 
+                placeholder="+91 9876543212" 
+                value={newPatientForm.tertiaryContactPhone}
+                onChange={(e) => handleNewPatientInputChange('tertiaryContactPhone', e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Emergency Contact Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Emergency Contact</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input 
+                label="Emergency Contact Name" 
+                placeholder="John Doe" 
+                value={newPatientForm.emergencyContactName}
+                onChange={(e) => handleNewPatientInputChange('emergencyContactName', e.target.value)}
+              />
+              <Input 
+                label="Emergency Contact Phone" 
+                placeholder="+91 9876543210" 
+                value={newPatientForm.emergencyContactPhone}
+                onChange={(e) => handleNewPatientInputChange('emergencyContactPhone', e.target.value)}
+              />
             </div>
           </div>
 
@@ -761,24 +846,74 @@ export default function ManagePatientsPage() {
                 value={newPatientForm.primaryCancerSite}
                 onChange={(e) => handleNewPatientInputChange('primaryCancerSite', e.target.value)}
                 options={[
-                  { label: 'Lung', value: 'Lung' },
-                  { label: 'Breast', value: 'Breast' },
-                  { label: 'Prostate', value: 'Prostate' },
-                  { label: 'Colorectal', value: 'Colorectal' },
-                  { label: 'Other', value: 'Other' }
+                  { label: 'Lung', value: CancerSiteType.Lung },
+                  { label: 'Breast', value: CancerSiteType.Breast },
+                  { label: 'Kidney', value: CancerSiteType.Kidney },
+                  { label: 'Colon', value: CancerSiteType.Colon },
+                  { label: 'Prostate', value: CancerSiteType.Prostate },
+                  { label: 'Cervical', value: CancerSiteType.Cervical },
+                  { label: 'Ovarian', value: CancerSiteType.Ovarian },
+                  { label: 'Liver', value: CancerSiteType.Liver },
+                  { label: 'Stomach', value: CancerSiteType.Stomach },
+                  { label: 'Pancreatic', value: CancerSiteType.Pancreatic },
+                  { label: 'Brain', value: CancerSiteType.Brain },
+                  { label: 'Blood', value: CancerSiteType.Blood },
+                  { label: 'Other', value: CancerSiteType.Other }
                 ]}
+                required
+              />
+              <Input 
+                label="Cancer Stage" 
+                placeholder="Stage IIA" 
+                value={newPatientForm.cancerStage}
+                onChange={(e) => handleNewPatientInputChange('cancerStage', e.target.value)}
+              />
+              <Input 
+                label="Histology" 
+                placeholder="Adenocarcinoma" 
+                value={newPatientForm.histology}
+                onChange={(e) => handleNewPatientInputChange('histology', e.target.value)}
+              />
+              <Input 
+                type="date" 
+                label="Diagnosis Date" 
+                value={newPatientForm.diagnosisDate}
+                onChange={(e) => handleNewPatientInputChange('diagnosisDate', e.target.value)}
+              />
+              <Select
+                label="Treatment Pathway"
+                value={newPatientForm.treatmentPathway}
+                onChange={(e) => handleNewPatientInputChange('treatmentPathway', e.target.value)}
+                options={[
+                  { label: 'Curative', value: TreatmentPathwayType.Curative },
+                  { label: 'Palliative', value: TreatmentPathwayType.Palliative }
+                ]}
+                required
               />
               <Select
                 label="Risk Level"
-                placeholder="Select Risk Level"
                 value={newPatientForm.riskLevel}
                 onChange={(e) => handleNewPatientInputChange('riskLevel', e.target.value)}
                 options={[
-                  { label: 'Low', value: 'Low' },
-                  { label: 'Medium', value: 'Medium' },
-                  { label: 'High', value: 'High' },
-                  { label: 'Critical', value: 'Critical' }
+                  { label: 'Low', value: RiskLevelType.Low },
+                  { label: 'Medium', value: RiskLevelType.Medium },
+                  { label: 'High', value: RiskLevelType.High },
+                  { label: 'Critical', value: RiskLevelType.Critical }
                 ]}
+                required
+              />
+              <Input 
+                label="Site Specific Diagnosis" 
+                placeholder="Detailed diagnosis" 
+                value={newPatientForm.siteSpecificDiagnosis}
+                onChange={(e) => handleNewPatientInputChange('siteSpecificDiagnosis', e.target.value)}
+                className="sm:col-span-2"
+              />
+              <Input 
+                label="Original MRN" 
+                placeholder="Medical Record Number" 
+                value={newPatientForm.originalMRN}
+                onChange={(e) => handleNewPatientInputChange('originalMRN', e.target.value)}
               />
             </div>
           </div>
@@ -810,61 +945,164 @@ export default function ManagePatientsPage() {
       <Modal open={isViewModalOpen} onOpenChange={setViewModalOpen} title="Patient Details" size="lg">
         {selectedPatient && (
           <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
-                  <label className="text-sm font-semibold text-blue-700 uppercase tracking-wide">Patient ID</label>
-                  <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.patientId}</p>
-                </div>
-                <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100">
-                  <label className="text-sm font-semibold text-emerald-700 uppercase tracking-wide">Full Name</label>
-                  <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.firstName} {selectedPatient.lastName}</p>
-                </div>
-                <div className="p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
-                  <label className="text-sm font-semibold text-purple-700 uppercase tracking-wide">Age</label>
-                  <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.age} years</p>
-                </div>
-                <div className="p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100">
-                  <label className="text-sm font-semibold text-amber-700 uppercase tracking-wide">Gender</label>
-                  <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.gender}</p>
-                </div>
-                <div className="p-4 rounded-xl bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-100">
-                  <label className="text-sm font-semibold text-cyan-700 uppercase tracking-wide">Mobile Number</label>
-                  <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.mobileNumber}</p>
-                </div>
-                <div className="p-4 rounded-xl bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-100">
-                  <label className="text-sm font-semibold text-violet-700 uppercase tracking-wide">Email</label>
-                  <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.email}</p>
+            <div className="space-y-8">
+              {/* Basic Information */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Basic Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
+                    <label className="text-sm font-semibold text-blue-700 uppercase tracking-wide">Patient ID</label>
+                    <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.patientId}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100">
+                    <label className="text-sm font-semibold text-emerald-700 uppercase tracking-wide">Full Name</label>
+                    <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.firstName} {selectedPatient.lastName}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
+                    <label className="text-sm font-semibold text-purple-700 uppercase tracking-wide">Age</label>
+                    <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.age} years</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100">
+                    <label className="text-sm font-semibold text-amber-700 uppercase tracking-wide">Gender</label>
+                    <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.gender === 'M' ? 'Male' : selectedPatient.gender === 'F' ? 'Female' : 'Other'}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-100">
+                    <label className="text-sm font-semibold text-teal-700 uppercase tracking-wide">Registration Date</label>
+                    <p className="text-lg font-bold text-gray-900 mt-1">{new Date(selectedPatient.registrationDate).toLocaleDateString()}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-100">
+                    <label className="text-sm font-semibold text-pink-700 uppercase tracking-wide">Registration Year</label>
+                    <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.registrationYear || 'N/A'}</p>
+                  </div>
                 </div>
               </div>
-              <div className="space-y-4">
-                <div className="p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100">
-                  <label className="text-sm font-semibold text-green-700 uppercase tracking-wide">Cancer Site</label>
-                  <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.primaryCancerSite}</p>
+
+              {/* Contact Information */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Contact Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-100">
+                    <label className="text-sm font-semibold text-cyan-700 uppercase tracking-wide">Primary Mobile</label>
+                    <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.mobileNumber}</p>
+                  </div>
+                  {selectedPatient.secondaryContactPhone && (
+                    <div className="p-4 rounded-xl bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-100">
+                      <label className="text-sm font-semibold text-cyan-700 uppercase tracking-wide">Secondary Mobile</label>
+                      <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.secondaryContactPhone}</p>
+                    </div>
+                  )}
+                  {selectedPatient.tertiaryContactPhone && (
+                    <div className="p-4 rounded-xl bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-100">
+                      <label className="text-sm font-semibold text-cyan-700 uppercase tracking-wide">Tertiary Mobile</label>
+                      <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.tertiaryContactPhone}</p>
+                    </div>
+                  )}
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-100">
+                    <label className="text-sm font-semibold text-violet-700 uppercase tracking-wide">Email</label>
+                    <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.email || 'N/A'}</p>
+                  </div>
+                  {(selectedPatient.address || selectedPatient.city || selectedPatient.state) && (
+                    <div className="p-4 rounded-xl bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-100 md:col-span-2">
+                      <label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Address</label>
+                      <p className="text-lg font-bold text-gray-900 mt-1">
+                        {[selectedPatient.address, selectedPatient.city, selectedPatient.state, selectedPatient.country]
+                          .filter(Boolean)
+                          .join(', ')}
+                      </p>
+                    </div>
+                  )}
                 </div>
-                <div className="p-4 rounded-xl bg-gradient-to-r from-slate-50 to-gray-50 border border-slate-100">
-                  <label className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Status</label>
-                  <div className="mt-2">
-                    <span className={`inline-flex px-4 py-2 text-sm font-bold rounded-full ${getStatusBadgeColor(selectedPatient.currentStatus)}`}>
-                      {selectedPatient.currentStatus}
-                    </span>
+              </div>
+
+              {/* Emergency Contact */}
+              {(selectedPatient.emergencyContactName || selectedPatient.emergencyContactPhone) && (
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Emergency Contact</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {selectedPatient.emergencyContactName && (
+                      <div className="p-4 rounded-xl bg-gradient-to-r from-red-50 to-orange-50 border border-red-100">
+                        <label className="text-sm font-semibold text-red-700 uppercase tracking-wide">Contact Name</label>
+                        <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.emergencyContactName}</p>
+                      </div>
+                    )}
+                    {selectedPatient.emergencyContactPhone && (
+                      <div className="p-4 rounded-xl bg-gradient-to-r from-red-50 to-orange-50 border border-red-100">
+                        <label className="text-sm font-semibold text-red-700 uppercase tracking-wide">Contact Phone</label>
+                        <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.emergencyContactPhone}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="p-4 rounded-xl bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-100">
-                  <label className="text-sm font-semibold text-rose-700 uppercase tracking-wide">Risk Level</label>
-                  <div className="mt-2">
-                    <span className={`inline-flex px-4 py-2 text-sm font-bold rounded-full ${getRiskBadgeColor(selectedPatient.riskLevel)}`}>
-                      {selectedPatient.riskLevel}
-                    </span>
+              )}
+
+              {/* Medical Information */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Medical Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100">
+                    <label className="text-sm font-semibold text-green-700 uppercase tracking-wide">Primary Cancer Site</label>
+                    <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.primaryCancerSite}</p>
                   </div>
-                </div>
-                <div className="p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100">
-                  <label className="text-sm font-semibold text-indigo-700 uppercase tracking-wide">Assigned Doctor</label>
-                  <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.assignedDoctorName}</p>
-                </div>
-                <div className="p-4 rounded-xl bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-100">
-                  <label className="text-sm font-semibold text-teal-700 uppercase tracking-wide">Registration Date</label>
-                  <p className="text-lg font-bold text-gray-900 mt-1">{new Date(selectedPatient.registrationDate).toLocaleDateString()}</p>
+                  {selectedPatient.cancerStage && (
+                    <div className="p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
+                      <label className="text-sm font-semibold text-blue-700 uppercase tracking-wide">Cancer Stage</label>
+                      <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.cancerStage}</p>
+                    </div>
+                  )}
+                  {selectedPatient.histology && (
+                    <div className="p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
+                      <label className="text-sm font-semibold text-purple-700 uppercase tracking-wide">Histology</label>
+                      <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.histology}</p>
+                    </div>
+                  )}
+                  {selectedPatient.diagnosisDate && (
+                    <div className="p-4 rounded-xl bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-100">
+                      <label className="text-sm font-semibold text-yellow-700 uppercase tracking-wide">Diagnosis Date</label>
+                      <p className="text-lg font-bold text-gray-900 mt-1">{new Date(selectedPatient.diagnosisDate).toLocaleDateString()}</p>
+                    </div>
+                  )}
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100">
+                    <label className="text-sm font-semibold text-indigo-700 uppercase tracking-wide">Treatment Pathway</label>
+                    <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.treatmentPathway}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-slate-50 to-gray-50 border border-slate-100">
+                    <label className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Status</label>
+                    <div className="mt-2">
+                      <span className={`inline-flex px-4 py-2 text-sm font-bold rounded-full ${getStatusBadgeColor(selectedPatient.currentStatus)}`}>
+                        {selectedPatient.currentStatus}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-100">
+                    <label className="text-sm font-semibold text-rose-700 uppercase tracking-wide">Risk Level</label>
+                    <div className="mt-2">
+                      <span className={`inline-flex px-4 py-2 text-sm font-bold rounded-full ${getRiskBadgeColor(selectedPatient.riskLevel)}`}>
+                        {selectedPatient.riskLevel}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100">
+                    <label className="text-sm font-semibold text-indigo-700 uppercase tracking-wide">Assigned Doctor</label>
+                    <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.assignedDoctorName || 'Not assigned'}</p>
+                  </div>
+                  {selectedPatient.siteSpecificDiagnosis && (
+                    <div className="p-4 rounded-xl bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-100 md:col-span-2">
+                      <label className="text-sm font-semibold text-teal-700 uppercase tracking-wide">Site Specific Diagnosis</label>
+                      <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.siteSpecificDiagnosis}</p>
+                    </div>
+                  )}
+                  {selectedPatient.originalMRN && (
+                    <div className="p-4 rounded-xl bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-100">
+                      <label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Original MRN</label>
+                      <p className="text-lg font-bold text-gray-900 mt-1">{selectedPatient.originalMRN}</p>
+                    </div>
+                  )}
+                  {selectedPatient.nextFollowupDate && (
+                    <div className="p-4 rounded-xl bg-gradient-to-r from-orange-50 to-red-50 border border-orange-100">
+                      <label className="text-sm font-semibold text-orange-700 uppercase tracking-wide">Next Follow-up</label>
+                      <p className="text-lg font-bold text-gray-900 mt-1">{new Date(selectedPatient.nextFollowupDate).toLocaleDateString()}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -885,110 +1123,242 @@ export default function ManagePatientsPage() {
       <Modal open={isEditModalOpen} onOpenChange={setEditModalOpen} title="Edit Patient" size="lg">
         {selectedPatient && (
           <form onSubmit={handleEditSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input 
-                label="Patient ID" 
-                value={editFormData.patientId || ''}
-                onChange={(e) => handleEditInputChange('patientId', e.target.value)}
-                required 
-              />
-              <div></div>
-              <Input 
-                label="First Name" 
-                value={editFormData.firstName || ''}
-                onChange={(e) => handleEditInputChange('firstName', e.target.value)}
-                required 
-              />
-              <Input 
-                label="Last Name" 
-                value={editFormData.lastName || ''}
-                onChange={(e) => handleEditInputChange('lastName', e.target.value)}
-                required 
-              />
-              <Input 
-                label="Age" 
-                type="number"
-                value={editFormData.age || ''}
-                onChange={(e) => handleEditInputChange('age', parseInt(e.target.value))}
-                required 
-              />
-              <Select
-                label="Gender"
-                value={editFormData.gender || ''}
-                onChange={(e) => handleEditInputChange('gender', e.target.value)}
-                options={[
-                  { label: 'Male', value: 'Male' },
-                  { label: 'Female', value: 'Female' }
-                ]}
-                required
-              />
-              <Input 
-                label="Mobile Number" 
-                value={editFormData.mobileNumber || ''}
-                onChange={(e) => handleEditInputChange('mobileNumber', e.target.value)}
-                required 
-              />
-              <Input 
-                type="email" 
-                label="Email" 
-                value={editFormData.email || ''}
-                onChange={(e) => handleEditInputChange('email', e.target.value)}
-              />
-              <Select
-                label="Primary Cancer Site"
-                value={editFormData.primaryCancerSite || ''}
-                onChange={(e) => handleEditInputChange('primaryCancerSite', e.target.value)}
-                options={[
-                  { label: 'Lung', value: 'Lung' },
-                  { label: 'Breast', value: 'Breast' },
-                  { label: 'Prostate', value: 'Prostate' },
-                  { label: 'Colorectal', value: 'Colorectal' },
-                  { label: 'Other', value: 'Other' }
-                ]}
-                required
-              />
-              <Select
-                label="Status"
-                value={editFormData.currentStatus || ''}
-                onChange={(e) => handleEditInputChange('currentStatus', e.target.value)}
-                options={[
-                  { label: 'Active', value: 'Active' },
-                  { label: 'Follow-up', value: 'Follow-up' },
-                  { label: 'Inactive', value: 'Inactive' }
-                ]}
-                required
-              />
-              <Select
-                label="Risk Level"
-                value={editFormData.riskLevel || ''}
-                onChange={(e) => handleEditInputChange('riskLevel', e.target.value)}
-                options={[
-                  { label: 'Low', value: 'Low' },
-                  { label: 'Medium', value: 'Medium' },
-                  { label: 'High', value: 'High' },
-                  { label: 'Critical', value: 'Critical' }
-                ]}
-                required
-              />
-              <Select
-                label="Assigned Doctor"
-                value={editFormData.assignedDoctorId || ''}
-                onChange={(e) => {
-                  const doctorId = e.target.value
-                  const selectedDoctor = doctors.find(d => d.id === doctorId)
-                  handleEditInputChange('assignedDoctorId', doctorId)
-                  handleEditInputChange('assignedDoctorName', selectedDoctor ? selectedDoctor.displayName : '')
-                }}
-                options={[
-                  { label: 'Select Doctor', value: '' },
-                  ...doctors.map(doctor => ({
-                    label: doctor.displayName,
-                    value: doctor.id
-                  }))
-                ]}
-                placeholder="Select a doctor"
-                required
-              />
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <div className="space-y-4">
+                <h4 className="text-md font-semibold text-gray-800 border-b pb-2">Basic Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input 
+                    label="Patient ID" 
+                    value={editFormData.patientId || selectedPatient.patientId || ''}
+                    onChange={(e) => handleEditInputChange('patientId', e.target.value)}
+                    required 
+                  />
+                  <div></div>
+                  <Input 
+                    label="First Name" 
+                    value={editFormData.firstName || selectedPatient.firstName || ''}
+                    onChange={(e) => handleEditInputChange('firstName', e.target.value)}
+                    required 
+                  />
+                  <Input 
+                    label="Last Name" 
+                    value={editFormData.lastName || selectedPatient.lastName || ''}
+                    onChange={(e) => handleEditInputChange('lastName', e.target.value)}
+                    required 
+                  />
+                  <Input 
+                    label="Age" 
+                    type="number"
+                    value={editFormData.age || selectedPatient.age || ''}
+                    onChange={(e) => handleEditInputChange('age', parseInt(e.target.value))}
+                    required 
+                  />
+                  <Select
+                    label="Gender"
+                    value={editFormData.gender || selectedPatient.gender || ''}
+                    onChange={(e) => handleEditInputChange('gender', e.target.value)}
+                    options={[
+                      { label: 'Male', value: Gender.Male },
+                      { label: 'Female', value: Gender.Female },
+                      { label: 'Other', value: Gender.Other }
+                    ]}
+                    required
+                  />
+                </div>
+              </div>
+              
+              {/* Contact Information */}
+              <div className="space-y-4">
+                <h4 className="text-md font-semibold text-gray-800 border-b pb-2">Contact Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input 
+                    label="Mobile Number" 
+                    value={editFormData.mobileNumber || selectedPatient.mobileNumber || ''}
+                    onChange={(e) => handleEditInputChange('mobileNumber', e.target.value)}
+                    required 
+                  />
+                  <Input 
+                    type="email" 
+                    label="Email" 
+                    value={editFormData.email || selectedPatient.email || ''}
+                    onChange={(e) => handleEditInputChange('email', e.target.value)}
+                  />
+                  <Input 
+                    label="Secondary Contact Phone" 
+                    value={editFormData.secondaryContactPhone || selectedPatient.secondaryContactPhone || ''}
+                    onChange={(e) => handleEditInputChange('secondaryContactPhone', e.target.value)}
+                  />
+                  <Input 
+                    label="Tertiary Contact Phone" 
+                    value={editFormData.tertiaryContactPhone || selectedPatient.tertiaryContactPhone || ''}
+                    onChange={(e) => handleEditInputChange('tertiaryContactPhone', e.target.value)}
+                  />
+                  <Input 
+                    label="Address" 
+                    value={editFormData.address || selectedPatient.address || ''}
+                    onChange={(e) => handleEditInputChange('address', e.target.value)}
+                    className="md:col-span-2"
+                  />
+                  <Input 
+                    label="City" 
+                    value={editFormData.city || selectedPatient.city || ''}
+                    onChange={(e) => handleEditInputChange('city', e.target.value)}
+                  />
+                  <Input 
+                    label="State" 
+                    value={editFormData.state || selectedPatient.state || ''}
+                    onChange={(e) => handleEditInputChange('state', e.target.value)}
+                  />
+                  <Input 
+                    label="Postal Code" 
+                    value={editFormData.postalCode || selectedPatient.postalCode || ''}
+                    onChange={(e) => handleEditInputChange('postalCode', e.target.value)}
+                  />
+                  <Input 
+                    label="Country" 
+                    value={editFormData.country || selectedPatient.country || 'India'}
+                    onChange={(e) => handleEditInputChange('country', e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              {/* Emergency Contact */}
+              <div className="space-y-4">
+                <h4 className="text-md font-semibold text-gray-800 border-b pb-2">Emergency Contact</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input 
+                    label="Emergency Contact Name" 
+                    value={editFormData.emergencyContactName || selectedPatient.emergencyContactName || ''}
+                    onChange={(e) => handleEditInputChange('emergencyContactName', e.target.value)}
+                  />
+                  <Input 
+                    label="Emergency Contact Phone" 
+                    value={editFormData.emergencyContactPhone || selectedPatient.emergencyContactPhone || ''}
+                    onChange={(e) => handleEditInputChange('emergencyContactPhone', e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              {/* Medical Information */}
+              <div className="space-y-4">
+                <h4 className="text-md font-semibold text-gray-800 border-b pb-2">Medical Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Select
+                    label="Primary Cancer Site"
+                    value={editFormData.primaryCancerSite || selectedPatient.primaryCancerSite || ''}
+                    onChange={(e) => handleEditInputChange('primaryCancerSite', e.target.value)}
+                    options={[
+                      { label: 'Lung', value: CancerSiteType.Lung },
+                      { label: 'Breast', value: CancerSiteType.Breast },
+                      { label: 'Kidney', value: CancerSiteType.Kidney },
+                      { label: 'Colon', value: CancerSiteType.Colon },
+                      { label: 'Prostate', value: CancerSiteType.Prostate },
+                      { label: 'Cervical', value: CancerSiteType.Cervical },
+                      { label: 'Ovarian', value: CancerSiteType.Ovarian },
+                      { label: 'Liver', value: CancerSiteType.Liver },
+                      { label: 'Stomach', value: CancerSiteType.Stomach },
+                      { label: 'Pancreatic', value: CancerSiteType.Pancreatic },
+                      { label: 'Brain', value: CancerSiteType.Brain },
+                      { label: 'Blood', value: CancerSiteType.Blood },
+                      { label: 'Other', value: CancerSiteType.Other }
+                    ]}
+                    required
+                  />
+                  <Input 
+                    label="Cancer Stage" 
+                    value={editFormData.cancerStage || selectedPatient.cancerStage || ''}
+                    onChange={(e) => handleEditInputChange('cancerStage', e.target.value)}
+                  />
+                  <Input 
+                    label="Histology" 
+                    value={editFormData.histology || selectedPatient.histology || ''}
+                    onChange={(e) => handleEditInputChange('histology', e.target.value)}
+                  />
+                  <Input 
+                    type="date" 
+                    label="Diagnosis Date" 
+                    value={editFormData.diagnosisDate || (selectedPatient.diagnosisDate ? selectedPatient.diagnosisDate.split('T')[0] : '')}
+                    onChange={(e) => handleEditInputChange('diagnosisDate', e.target.value)}
+                  />
+                  <Select
+                    label="Treatment Pathway"
+                    value={editFormData.treatmentPathway || selectedPatient.treatmentPathway || ''}
+                    onChange={(e) => handleEditInputChange('treatmentPathway', e.target.value)}
+                    options={[
+                      { label: 'Curative', value: TreatmentPathwayType.Curative },
+                      { label: 'Palliative', value: TreatmentPathwayType.Palliative }
+                    ]}
+                    required
+                  />
+                  <Select
+                    label="Status"
+                    value={editFormData.currentStatus || selectedPatient.currentStatus || ''}
+                    onChange={(e) => handleEditInputChange('currentStatus', e.target.value)}
+                    options={[
+                      { label: 'Active', value: 'Active' },
+                      { label: 'Completed', value: 'Completed' },
+                      { label: 'Defaulter', value: 'Defaulter' },
+                      { label: 'Lost to Follow-up', value: 'LostToFollowup' },
+                      { label: 'Deceased', value: 'Deceased' }
+                    ]}
+                    required
+                  />
+                  <Select
+                    label="Risk Level"
+                    value={editFormData.riskLevel || selectedPatient.riskLevel || ''}
+                    onChange={(e) => handleEditInputChange('riskLevel', e.target.value)}
+                    options={[
+                      { label: 'Low', value: RiskLevelType.Low },
+                      { label: 'Medium', value: RiskLevelType.Medium },
+                      { label: 'High', value: RiskLevelType.High },
+                      { label: 'Critical', value: RiskLevelType.Critical }
+                    ]}
+                    required
+                  />
+                  <Select
+                    label="Assigned Doctor"
+                    value={editFormData.assignedDoctorId || selectedPatient.assignedDoctorId || ''}
+                    onChange={(e) => {
+                      const doctorId = e.target.value
+                      const selectedDoctor = doctors.find(d => d.id === doctorId)
+                      handleEditInputChange('assignedDoctorId', doctorId)
+                      handleEditInputChange('assignedDoctorName', selectedDoctor ? selectedDoctor.displayName : '')
+                    }}
+                    options={[
+                      { label: 'Select Doctor', value: '' },
+                      ...doctors.map(doctor => ({
+                        label: doctor.displayName,
+                        value: doctor.id
+                      }))
+                    ]}
+                    placeholder="Select a doctor"
+                  />
+                  <Input 
+                    label="Site Specific Diagnosis" 
+                    value={editFormData.siteSpecificDiagnosis || selectedPatient.siteSpecificDiagnosis || ''}
+                    onChange={(e) => handleEditInputChange('siteSpecificDiagnosis', e.target.value)}
+                    className="md:col-span-2"
+                  />
+                  <Input 
+                    label="Original MRN" 
+                    value={editFormData.originalMRN || selectedPatient.originalMRN || ''}
+                    onChange={(e) => handleEditInputChange('originalMRN', e.target.value)}
+                  />
+                  <Input 
+                    type="number" 
+                    label="Registration Year" 
+                    value={editFormData.registrationYear || selectedPatient.registrationYear || new Date().getFullYear()}
+                    onChange={(e) => handleEditInputChange('registrationYear', parseInt(e.target.value))}
+                  />
+                  <Input 
+                    type="date" 
+                    label="Next Follow-up Date" 
+                    value={editFormData.nextFollowupDate || (selectedPatient.nextFollowupDate ? selectedPatient.nextFollowupDate.split('T')[0] : '')}
+                    onChange={(e) => handleEditInputChange('nextFollowupDate', e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
             <div className="flex justify-end space-x-3 pt-6 border-t">
               <Button 

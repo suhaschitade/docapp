@@ -21,6 +21,82 @@ public class PatientsController : ControllerBase
         _logger = logger;
     }
 
+    // Helper method to parse gender from various formats
+    private Gender ParseGender(string genderStr)
+    {
+        if (string.IsNullOrEmpty(genderStr))
+            throw new ArgumentException("Gender cannot be null or empty");
+
+        // Handle single character format
+        if (genderStr.Length == 1)
+        {
+            return genderStr.ToUpper() switch
+            {
+                "M" => Gender.Male,
+                "F" => Gender.Female,
+                "O" => Gender.Other,
+                _ => throw new ArgumentException($"Invalid gender character: {genderStr}")
+            };
+        }
+
+        // Handle full name format
+        return genderStr.ToLower() switch
+        {
+            "male" => Gender.Male,
+            "female" => Gender.Female,
+            "other" => Gender.Other,
+            _ => throw new ArgumentException($"Invalid gender value: {genderStr}")
+        };
+    }
+
+    // Helper method to parse cancer site type
+    private CancerSiteType ParseCancerSiteType(string cancerSiteStr)
+    {
+        if (string.IsNullOrEmpty(cancerSiteStr))
+            throw new ArgumentException("Cancer site cannot be null or empty");
+
+        if (Enum.TryParse<CancerSiteType>(cancerSiteStr, true, out var result))
+            return result;
+        
+        throw new ArgumentException($"Invalid cancer site value: {cancerSiteStr}");
+    }
+
+    // Helper method to parse treatment pathway type
+    private TreatmentPathwayType ParseTreatmentPathwayType(string treatmentPathwayStr)
+    {
+        if (string.IsNullOrEmpty(treatmentPathwayStr))
+            throw new ArgumentException("Treatment pathway cannot be null or empty");
+
+        if (Enum.TryParse<TreatmentPathwayType>(treatmentPathwayStr, true, out var result))
+            return result;
+        
+        throw new ArgumentException($"Invalid treatment pathway value: {treatmentPathwayStr}");
+    }
+
+    // Helper method to parse patient status type
+    private PatientStatusType ParsePatientStatusType(string statusStr)
+    {
+        if (string.IsNullOrEmpty(statusStr))
+            throw new ArgumentException("Patient status cannot be null or empty");
+
+        if (Enum.TryParse<PatientStatusType>(statusStr, true, out var result))
+            return result;
+        
+        throw new ArgumentException($"Invalid patient status value: {statusStr}");
+    }
+
+    // Helper method to parse risk level type
+    private RiskLevelType ParseRiskLevelType(string riskLevelStr)
+    {
+        if (string.IsNullOrEmpty(riskLevelStr))
+            throw new ArgumentException("Risk level cannot be null or empty");
+
+        if (Enum.TryParse<RiskLevelType>(riskLevelStr, true, out var result))
+            return result;
+        
+        throw new ArgumentException($"Invalid risk level value: {riskLevelStr}");
+    }
+
     // GET: api/patients
     [HttpGet]
     public async Task<ActionResult<IEnumerable<PatientDto>>> GetPatients(
@@ -86,8 +162,7 @@ public class PatientsController : ControllerBase
                     PatientId = p.PatientId,
                     FirstName = p.FirstName,
                     LastName = p.LastName,
-                    DateOfBirth = p.DateOfBirth,
-                    Age = DateTime.Today.Year - p.DateOfBirth.Year - (DateTime.Today.DayOfYear < p.DateOfBirth.DayOfYear ? 1 : 0),
+                    Age = p.Age,
                     Gender = p.Gender.ToString(),
                     MobileNumber = p.MobileNumber,
                     Email = p.Email,
@@ -110,6 +185,17 @@ public class PatientsController : ControllerBase
                     RegistrationDate = p.RegistrationDate,
                     LastVisitDate = p.LastVisitDate,
                     NextFollowupDate = p.NextFollowupDate,
+                    // Additional fields
+                    SiteSpecificDiagnosis = p.SiteSpecificDiagnosis,
+                    RegistrationYear = p.RegistrationYear,
+                    SecondaryContactPhone = p.SecondaryContactPhone,
+                    TertiaryContactPhone = p.TertiaryContactPhone,
+                    DateLoggedIn = p.DateLoggedIn,
+                    ExcelSheetSource = p.ExcelSheetSource,
+                    ExcelRowNumber = p.ExcelRowNumber,
+                    OriginalMRN = p.OriginalMRN,
+                    ImportedFromExcel = p.ImportedFromExcel,
+                    CreatedBy = p.CreatedBy,
                     CreatedAt = p.CreatedAt,
                     UpdatedAt = p.UpdatedAt
                 })
@@ -158,8 +244,7 @@ public class PatientsController : ControllerBase
                 PatientId = patient.PatientId,
                 FirstName = patient.FirstName,
                 LastName = patient.LastName,
-                DateOfBirth = patient.DateOfBirth,
-                Age = DateTime.Today.Year - patient.DateOfBirth.Year - (DateTime.Today.DayOfYear < patient.DateOfBirth.DayOfYear ? 1 : 0),
+                Age = patient.Age,
                 Gender = patient.Gender.ToString(),
                 MobileNumber = patient.MobileNumber,
                 Email = patient.Email,
@@ -182,6 +267,17 @@ public class PatientsController : ControllerBase
                 RegistrationDate = patient.RegistrationDate,
                 LastVisitDate = patient.LastVisitDate,
                 NextFollowupDate = patient.NextFollowupDate,
+                // Additional fields
+                SiteSpecificDiagnosis = patient.SiteSpecificDiagnosis,
+                RegistrationYear = patient.RegistrationYear,
+                SecondaryContactPhone = patient.SecondaryContactPhone,
+                TertiaryContactPhone = patient.TertiaryContactPhone,
+                DateLoggedIn = patient.DateLoggedIn,
+                ExcelSheetSource = patient.ExcelSheetSource,
+                ExcelRowNumber = patient.ExcelRowNumber,
+                OriginalMRN = patient.OriginalMRN,
+                ImportedFromExcel = patient.ImportedFromExcel,
+                CreatedBy = patient.CreatedBy,
                 CreatedAt = patient.CreatedAt,
                 UpdatedAt = patient.UpdatedAt,
                 RecentAppointments = patient.Appointments.Take(5).Select(a => new AppointmentSummaryDto
@@ -240,8 +336,8 @@ public class PatientsController : ControllerBase
                 PatientId = createPatientDto.PatientId,
                 FirstName = createPatientDto.FirstName,
                 LastName = createPatientDto.LastName,
-                DateOfBirth = DateTime.SpecifyKind(createPatientDto.DateOfBirth, DateTimeKind.Utc),
-                Gender = Enum.Parse<Gender>(createPatientDto.Gender),
+                Age = createPatientDto.Age,
+                Gender = ParseGender(createPatientDto.Gender),
                 MobileNumber = createPatientDto.MobileNumber,
                 Email = createPatientDto.Email,
                 Address = createPatientDto.Address,
@@ -251,13 +347,13 @@ public class PatientsController : ControllerBase
                 Country = createPatientDto.Country ?? "India",
                 EmergencyContactName = createPatientDto.EmergencyContactName,
                 EmergencyContactPhone = createPatientDto.EmergencyContactPhone,
-                PrimaryCancerSite = Enum.Parse<CancerSiteType>(createPatientDto.PrimaryCancerSite),
+                PrimaryCancerSite = ParseCancerSiteType(createPatientDto.PrimaryCancerSite),
                 CancerStage = createPatientDto.CancerStage,
                 Histology = createPatientDto.Histology,
                 DiagnosisDate = createPatientDto.DiagnosisDate.HasValue ? DateTime.SpecifyKind(createPatientDto.DiagnosisDate.Value, DateTimeKind.Utc) : null,
-                TreatmentPathway = Enum.Parse<TreatmentPathwayType>(createPatientDto.TreatmentPathway),
+                TreatmentPathway = ParseTreatmentPathwayType(createPatientDto.TreatmentPathway),
                 CurrentStatus = PatientStatusType.Active,
-                RiskLevel = Enum.Parse<RiskLevelType>(createPatientDto.RiskLevel),
+                RiskLevel = ParseRiskLevelType(createPatientDto.RiskLevel),
                 AssignedDoctorId = createPatientDto.AssignedDoctorId,
                 RegistrationDate = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc),
                 NextFollowupDate = createPatientDto.NextFollowupDate.HasValue ? DateTime.SpecifyKind(createPatientDto.NextFollowupDate.Value, DateTimeKind.Utc) : null,
@@ -280,8 +376,7 @@ public class PatientsController : ControllerBase
                 PatientId = patient.PatientId,
                 FirstName = patient.FirstName,
                 LastName = patient.LastName,
-                DateOfBirth = patient.DateOfBirth,
-                Age = DateTime.Today.Year - patient.DateOfBirth.Year - (DateTime.Today.DayOfYear < patient.DateOfBirth.DayOfYear ? 1 : 0),
+                Age = patient.Age,
                 Gender = patient.Gender.ToString(),
                 MobileNumber = patient.MobileNumber,
                 Email = patient.Email,
@@ -341,8 +436,8 @@ public class PatientsController : ControllerBase
             patient.PatientId = updatePatientDto.PatientId;
             patient.FirstName = updatePatientDto.FirstName;
             patient.LastName = updatePatientDto.LastName;
-            patient.DateOfBirth = DateTime.SpecifyKind(updatePatientDto.DateOfBirth, DateTimeKind.Utc);
-            patient.Gender = Enum.Parse<Gender>(updatePatientDto.Gender);
+            patient.Age = updatePatientDto.Age;
+            patient.Gender = ParseGender(updatePatientDto.Gender);
             patient.MobileNumber = updatePatientDto.MobileNumber;
             patient.Email = updatePatientDto.Email;
             patient.Address = updatePatientDto.Address;
@@ -352,13 +447,13 @@ public class PatientsController : ControllerBase
             patient.Country = updatePatientDto.Country ?? "India";
             patient.EmergencyContactName = updatePatientDto.EmergencyContactName;
             patient.EmergencyContactPhone = updatePatientDto.EmergencyContactPhone;
-            patient.PrimaryCancerSite = Enum.Parse<CancerSiteType>(updatePatientDto.PrimaryCancerSite);
+            patient.PrimaryCancerSite = ParseCancerSiteType(updatePatientDto.PrimaryCancerSite);
             patient.CancerStage = updatePatientDto.CancerStage;
             patient.Histology = updatePatientDto.Histology;
             patient.DiagnosisDate = updatePatientDto.DiagnosisDate.HasValue ? DateTime.SpecifyKind(updatePatientDto.DiagnosisDate.Value, DateTimeKind.Utc) : null;
-            patient.TreatmentPathway = Enum.Parse<TreatmentPathwayType>(updatePatientDto.TreatmentPathway);
-            patient.CurrentStatus = Enum.Parse<PatientStatusType>(updatePatientDto.CurrentStatus);
-            patient.RiskLevel = Enum.Parse<RiskLevelType>(updatePatientDto.RiskLevel);
+            patient.TreatmentPathway = ParseTreatmentPathwayType(updatePatientDto.TreatmentPathway);
+            patient.CurrentStatus = ParsePatientStatusType(updatePatientDto.CurrentStatus);
+            patient.RiskLevel = ParseRiskLevelType(updatePatientDto.RiskLevel);
             patient.AssignedDoctorId = updatePatientDto.AssignedDoctorId;
             patient.NextFollowupDate = updatePatientDto.NextFollowupDate.HasValue ? DateTime.SpecifyKind(updatePatientDto.NextFollowupDate.Value, DateTimeKind.Utc) : null;
             patient.UpdatedAt = DateTime.UtcNow;

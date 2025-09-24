@@ -6,7 +6,6 @@ public class PatientDto
     public string PatientId { get; set; } = string.Empty;
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
-    public DateTime DateOfBirth { get; set; }
     public int Age { get; set; }
     public string Gender { get; set; } = string.Empty;
     public string MobileNumber { get; set; } = string.Empty;
@@ -30,6 +29,20 @@ public class PatientDto
     public DateTime RegistrationDate { get; set; }
     public DateTime? LastVisitDate { get; set; }
     public DateTime? NextFollowupDate { get; set; }
+    
+    // Excel import related fields
+    public string? SiteSpecificDiagnosis { get; set; }
+    public int? RegistrationYear { get; set; }
+    public string? SecondaryContactPhone { get; set; }
+    public string? TertiaryContactPhone { get; set; }
+    public DateTime? DateLoggedIn { get; set; }
+    public string? ExcelSheetSource { get; set; }
+    public int? ExcelRowNumber { get; set; }
+    public string? OriginalMRN { get; set; }
+    public bool ImportedFromExcel { get; set; }
+    
+    // Metadata
+    public string? CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
@@ -46,7 +59,7 @@ public class CreatePatientDto
     public string PatientId { get; set; } = string.Empty;
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
-    public DateTime DateOfBirth { get; set; }
+    public int Age { get; set; }
     public string Gender { get; set; } = string.Empty;
     public string MobileNumber { get; set; } = string.Empty;
     public string? Email { get; set; }
@@ -65,6 +78,14 @@ public class CreatePatientDto
     public string RiskLevel { get; set; } = string.Empty;
     public string? AssignedDoctorId { get; set; }
     public DateTime? NextFollowupDate { get; set; }
+    
+    // Additional fields
+    public string? SiteSpecificDiagnosis { get; set; }
+    public int? RegistrationYear { get; set; }
+    public string? SecondaryContactPhone { get; set; }
+    public string? TertiaryContactPhone { get; set; }
+    public string? OriginalMRN { get; set; }
+    public bool ImportedFromExcel { get; set; } = false;
 }
 
 public class UpdatePatientDto : CreatePatientDto

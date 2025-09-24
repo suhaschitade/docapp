@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/lib/auth";
-import { UserGroupIcon, CalendarDaysIcon, ChartBarIcon, HeartIcon, BeakerIcon, BellIcon } from "@heroicons/react/24/outline";
+import { UserGroupIcon, CalendarDaysIcon, ChartBarIcon, HeartIcon, BeakerIcon, BellIcon, ClockIcon } from "@heroicons/react/24/outline";
 import { NotificationDropdown } from "@/components/ui/NotificationDropdown";
 import { UserProfileDropdown } from "@/components/ui/UserProfileDropdown";
 
@@ -65,6 +65,14 @@ export default function DashboardPage() {
               hoverGradient: "hover:from-purple-600 hover:to-purple-700",
               icon: CalendarDaysIcon,
               description: "Schedule, view, and manage doctor appointments."
+            },
+            { 
+              title: "Today's Appointments", 
+              link: "/todays-appointments", 
+              gradient: "from-indigo-500 to-indigo-600",
+              hoverGradient: "hover:from-indigo-600 hover:to-indigo-700",
+              icon: ClockIcon,
+              description: "View and manage all appointments scheduled for today."
             },
             { 
               title: "Treatment Management", 
