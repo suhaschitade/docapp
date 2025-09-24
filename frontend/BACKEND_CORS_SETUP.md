@@ -1,7 +1,7 @@
 # Backend CORS Configuration for Network Access
 
 ## Problem
-When accessing the frontend via network IP (192.168.1.10:3000), the browser blocks API requests to the backend due to CORS policy.
+When accessing the frontend via network IP (192.168.0.169:3000), the browser blocks API requests to the backend due to CORS policy.
 
 ## Solution
 Configure your ASP.NET Core backend to allow requests from the network IP.
@@ -25,7 +25,7 @@ builder.Services.AddCors(options =>
             .WithOrigins(
                 "http://localhost:3000",     // Local development
                 "http://127.0.0.1:3000",     // Alternative localhost
-                "http://192.168.1.10:3000"   // Network access - UPDATE THIS IP TO MATCH YOUR NETWORK
+                "http://192.168.0.169:3000"  // Network access - UPDATE THIS IP TO MATCH YOUR NETWORK
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
@@ -101,7 +101,7 @@ ipconfig | findstr "IPv4"
 ```
 
 ### Update Frontend Configuration
-The frontend is already configured to use `192.168.1.10:5145` as the API base URL.
+The frontend is already configured to use `192.168.0.169:5145` as the API base URL.
 
 If your network IP is different, update `.env.local`:
 ```bash
@@ -110,17 +110,17 @@ NEXT_PUBLIC_API_BASE_URL=http://YOUR_NETWORK_IP:5145/api
 
 ## Testing
 
-1. **Start Backend**: Make sure it's listening on `0.0.0.0:5145` or `192.168.1.10:5145`
+1. **Start Backend**: Make sure it's listening on `0.0.0.0:5145` or `192.168.0.169:5145`
 2. **Start Frontend**: `npm run dev`
 3. **Test Localhost**: Visit `http://localhost:3000`
-4. **Test Network**: Visit `http://192.168.1.10:3000` from any device on the network
+4. **Test Network**: Visit `http://192.168.0.169:3000` from any device on the network
 
 ## Troubleshooting
 
 ### Check Backend is Accessible
 ```bash
 # Test if backend is reachable from network
-curl http://192.168.1.10:5145/api/patients
+curl http://192.168.0.169:5145/api/patients
 ```
 
 ### Check CORS Headers
